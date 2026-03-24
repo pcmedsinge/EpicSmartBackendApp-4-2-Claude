@@ -1,0 +1,29 @@
+[project]
+name = "cfip"
+version = "0.1.0"
+description = "Clinical-Financial Intelligence Platform — SMART on FHIR Backend Service"
+requires-python = ">=3.12"
+
+# [tool.pytest.ini_options]
+# Python's test runner (pytest) needs to know two things:
+#   1. Where to find tests (testpaths)
+#   2. That our code uses async/await, so it should run tests in an async event loop
+#      asyncio_mode = "auto" means every async def test_... function runs automatically
+#      without needing a @pytest.mark.asyncio decorator on each one.
+#      (C# analogy: like having [TestMethod] implied on every async Task test method)
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+# [tool.ruff]
+# Ruff is a fast Python linter/formatter (written in Rust).
+# C# analogy: like having Roslyn analyzers + StyleCop built in.
+# line-length = 100 gives us slightly more room than the default 88.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# E = pycodestyle errors, F = pyflakes (unused imports, undefined names)
+# I = isort (import ordering) — keeps imports tidy automatically
+select = ["E", "F", "I"]

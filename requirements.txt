@@ -1,0 +1,49 @@
+# CFIP — Python dependencies
+# Install with: pip install -r requirements.txt
+
+# ---------------------------------------------------------------------------
+# Web framework
+# ---------------------------------------------------------------------------
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0   # ASGI server — C# analogy: Kestrel for ASP.NET Core
+                             # [standard] adds websockets + faster event loop (uvloop)
+
+# ---------------------------------------------------------------------------
+# HTTP client — all Epic FHIR calls go through httpx (async-native)
+# C# analogy: HttpClient, but designed for async/await from the ground up
+# ---------------------------------------------------------------------------
+httpx>=0.27.0
+
+# ---------------------------------------------------------------------------
+# Data validation and settings
+# pydantic v2 — data models with runtime type checking (like C# records + DataAnnotations)
+# pydantic-settings — separate package in v2 that loads .env → typed Settings class
+# ---------------------------------------------------------------------------
+pydantic>=2.7.0
+pydantic-settings>=2.3.0
+python-dotenv>=1.0.0        # loads .env file into os.environ on startup
+
+# ---------------------------------------------------------------------------
+# Authentication — SMART Backend Services (OAuth 2.0 client credentials + JWT)
+# PyJWT — creates and signs JWTs
+# cryptography — provides RS384 algorithm support for PyJWT
+# C# analogy: System.IdentityModel.Tokens.Jwt + BouncyCastle
+# ---------------------------------------------------------------------------
+PyJWT>=2.8.0
+cryptography>=42.0.0
+
+# ---------------------------------------------------------------------------
+# Testing
+# pytest — test runner (C# analogy: xUnit/NUnit)
+# pytest-asyncio — lets pytest run async def test functions
+# respx — mocks httpx calls in tests (C# analogy: WireMock or HttpMessageHandler mock)
+# ---------------------------------------------------------------------------
+pytest>=8.2.0
+pytest-asyncio>=0.23.0
+respx>=0.21.0
+
+# ---------------------------------------------------------------------------
+# LLM integration (OpenAI) — used in Phase 5 (Agentic Orchestrator)
+# Declared now so the environment is complete from the start
+# ---------------------------------------------------------------------------
+openai>=1.30.0

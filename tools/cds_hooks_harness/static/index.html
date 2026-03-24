@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CFIP — CDS Hooks Test Harness</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f6fa;
+      color: #1a1a2e;
+      padding: 2rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.875rem; color: #666; margin-bottom: 2rem; }
+
+    /* ── Controls ─────────────────────────────────────────── */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    label { font-size: 0.875rem; font-weight: 600; }
+
+    select {
+      padding: 0.4rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    button#fire-btn {
+      padding: 0.45rem 1.25rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button#fire-btn:hover  { background: #1d4ed8; }
+    button#fire-btn:active { background: #1e40af; }
+    button#fire-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    .status {
+      font-size: 0.8rem;
+      color: #555;
+      margin-left: auto;
+    }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    #cards-container { display: flex; flex-direction: column; gap: 1rem; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .card-indicator-bar {
+      height: 4px;
+      width: 100%;
+    }
+    .indicator-info     { background: #3b82f6; }
+    .indicator-warning  { background: #f59e0b; }
+    .indicator-critical { background: #ef4444; }
+
+    .card-body { padding: 1rem 1.25rem; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.04em;
+    }
+    .badge-info     { background: #dbeafe; color: #1d4ed8; }
+    .badge-warning  { background: #fef3c7; color: #b45309; }
+    .badge-critical { background: #fee2e2; color: #b91c1c; }
+
+    .card-source { font-size: 0.75rem; color: #888; margin-left: auto; }
+
+    .card-summary {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+    }
+
+    .card-detail {
+      font-size: 0.85rem;
+      color: #444;
+      line-height: 1.6;
+      white-space: pre-wrap;       /* preserves newlines from markdown */
+      border-top: 1px solid #f0f0f0;
+      padding-top: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* strip markdown bold (**text**) for plain display */
+    .card-detail .md-bold { font-weight: 700; }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.875rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .suggestion-btn {
+      padding: 0.35rem 0.9rem;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #0369a1;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .suggestion-btn:hover { background: #e0f2fe; }
+    .suggestion-btn.recommended::after { content: " ★"; color: #f59e0b; }
+
+    .link-btn {
+      padding: 0.35rem 0.9rem;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #6d28d9;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .link-btn:hover { background: #ede9fe; }
+
+    /* ── Empty / error states ─────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem;
+      color: #aaa;
+      font-size: 0.9rem;
+      background: #fff;
+      border: 1px dashed #ddd;
+      border-radius: 8px;
+    }
+
+    .error-state {
+      padding: 1rem 1.25rem;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      color: #991b1b;
+      font-size: 0.875rem;
+    }
+
+    /* ── Raw JSON panel ───────────────────────────────────── */
+    details { margin-top: 1.5rem; }
+    summary {
+      font-size: 0.8rem;
+      color: #888;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.25rem 0;
+    }
+    summary:hover { color: #444; }
+    pre#raw-json {
+      margin-top: 0.5rem;
+      padding: 1rem;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>CFIP — CDS Hooks Test Harness</h1>
+  <p class="subtitle">Simulates Epic Hyperspace firing a hook at the CFIP CDS service.</p>
+
+  <div class="controls">
+    <label for="scenario-select">Scenario</label>
+    <select id="scenario-select">
+      <option value="A">A — GLP-1 Prior Auth (Ozempic)</option>
+      <option value="B" disabled>B — PGx Safety (Clopidogrel) — Phase 4</option>
+      <option value="C" disabled>C — Oncology PA (Keytruda) — Phase 4</option>
+      <option value="D" disabled>D — Denial Prevention (MRI) — Phase 3</option>
+    </select>
+    <button id="fire-btn">Fire Hook</button>
+    <span class="status" id="status-text">Ready</span>
+  </div>
+
+  <div id="cards-container">
+    <div class="empty-state">Select a scenario and click <strong>Fire Hook</strong> to see CDS cards.</div>
+  </div>
+
+  <details>
+    <summary>Raw JSON response</summary>
+    <pre id="raw-json">—</pre>
+  </details>
+
+  <script>
+    // Scenario definitions — mirrors tools/cds_hooks_harness/scenarios.py
+    // These are the hook request payloads we POST to CFIP.
+    const SCENARIOS = {
+      A: {
+        hook: "order-select",
+        context: {
+          patientId: "erXuFYUfucBZaryVksYEcMg3",
+          userId: "Practitioner/demo-practitioner",
+          encounterId: "demo-encounter-001",
+          selections: ["MedicationRequest/demo-ozempic-order"],
+          draftOrders: {
+            resourceType: "Bundle",
+            entry: [{
+              resource: {
+                resourceType: "MedicationRequest",
+                id: "demo-ozempic-order",
+                status: "draft",
+                intent: "proposal",
+                subject: { reference: "Patient/erXuFYUfucBZaryVksYEcMg3" },
+                medicationCodeableConcept: {
+                  coding: [{
+                    system: "http://www.nlm.nih.gov/research/umls/rxnorm",
+                    code: "2200750",
+                    display: "semaglutide 0.5 MG/DOSE subcutaneous injection"
+                  }],
+                  text: "Ozempic (semaglutide) 0.5mg injection"
+                }
+              }
+            }]
+          }
+        },
+        prefetch: {
+          patient: {
+            resourceType: "Patient",
+            id: "erXuFYUfucBZaryVksYEcMg3",
+            name: [{ use: "official", family: "Lin", given: ["Derrick"] }],
+            gender: "male",
+            birthDate: "1973-11-05"
+          },
+          medications: {
+            resourceType: "Bundle",
+            type: "searchset",
+            total: 1,
+            entry: [{
+              resource: {
+                resourceType: "MedicationRequest",
+                id: "demo-ozempic-order",
+                status: "draft",
+                medicationCodeableConcept: {
+                  coding: [{
+                    system: "http://www.nlm.nih.gov/research/umls/rxnorm",
+                    code: "2200750",
+                    display: "semaglutide 0.5 MG/DOSE subcutaneous injection"
+                  }],
+                  text: "Ozempic (semaglutide) 0.5mg injection"
+                }
+              }
+            }]
+          }
+        }
+      }
+    };
+
+    // Generate a UUID v4 — used as hookInstance (unique per hook firing)
+    function uuidv4() {
+      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      );
+    }
+
+    // Convert **bold** markdown to <strong> tags for display
+    function renderMarkdown(text) {
+      if (!text) return "";
+      return text
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n/g, "<br>");
+    }
+
+    function renderCard(card, index) {
+      const indicator = card.indicator || "info";
+      const badgeClass = `badge-${indicator}`;
+      const barClass   = `indicator-${indicator}`;
+
+      const suggestions = (card.suggestions || []).map(s => `
+        <button class="suggestion-btn ${s.isRecommended ? 'recommended' : ''}"
+                onclick="alert('PA submission wired in Phase 5')">
+          ${s.label}
+        </button>`).join("");
+
+      const links = (card.links || []).map(l => `
+        <a class="link-btn" href="${l.url}" target="_blank">${l.label}</a>
+      `).join("");
+
+      const actions = (suggestions || links)
+        ? `<div class="card-actions">${suggestions}${links}</div>`
+        : "";
+
+      const detail = card.detail
+        ? `<div class="card-detail">${renderMarkdown(card.detail)}</div>`
+        : "";
+
+      return `
+        <div class="card">
+          <div class="card-indicator-bar ${barClass}"></div>
+          <div class="card-body">
+            <div class="card-header">
+              <span class="card-badge ${badgeClass}">${indicator}</span>
+              <span class="card-source">${card.source?.label || "CFIP"}</span>
+            </div>
+            <div class="card-summary">${card.summary}</div>
+            ${detail}
+            ${actions}
+          </div>
+        </div>`;
+    }
+
+    async function fireHook() {
+      const scenarioId = document.getElementById("scenario-select").value;
+      const scenario   = SCENARIOS[scenarioId];
+      const btn        = document.getElementById("fire-btn");
+      const statusEl   = document.getElementById("status-text");
+      const container  = document.getElementById("cards-container");
+      const rawEl      = document.getElementById("raw-json");
+
+      if (!scenario) {
+        container.innerHTML = `<div class="error-state">Scenario ${scenarioId} not yet implemented.</div>`;
+        return;
+      }
+
+      btn.disabled    = true;
+      statusEl.textContent = "Firing hook...";
+      container.innerHTML  = "";
+
+      const payload = {
+        hook:         scenario.hook,
+        hookInstance: uuidv4(),
+        context:      scenario.context,
+        prefetch:     scenario.prefetch,
+      };
+
+      try {
+        const response = await fetch("/cds-services/cfip-order-intelligence", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        });
+
+        const body = await response.json();
+        rawEl.textContent = JSON.stringify(body, null, 2);
+
+        if (!response.ok) {
+          container.innerHTML = `<div class="error-state">
+            <strong>HTTP ${response.status}</strong><br>
+            ${JSON.stringify(body, null, 2)}
+          </div>`;
+          statusEl.textContent = `Error ${response.status}`;
+          return;
+        }
+
+        const cards = body.cards || [];
+        if (cards.length === 0) {
+          container.innerHTML = `<div class="empty-state">No cards returned.</div>`;
+        } else {
+          container.innerHTML = cards.map(renderCard).join("");
+        }
+
+        statusEl.textContent = `${cards.length} card(s) returned`;
+
+      } catch (err) {
+        container.innerHTML = `<div class="error-state">
+          <strong>Connection error</strong> — is CFIP running?<br>
+          <code>python -m app.main</code><br><br>${err}
+        </div>`;
+        statusEl.textContent = "Connection error";
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("fire-btn").addEventListener("click", fireHook);
+  </script>
+</body>
+</html>
