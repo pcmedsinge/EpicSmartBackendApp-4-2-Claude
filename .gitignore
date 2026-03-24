@@ -2,6 +2,7 @@
 .env
 keys/*.pem
 keys/*.key
+RequiredSettings.md
 
 # Python virtual environment
 .venv/
