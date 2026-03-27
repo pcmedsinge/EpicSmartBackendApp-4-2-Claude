@@ -80,6 +80,20 @@ class Settings(BaseSettings):
     log_level: str = Field(default="info", description="Uvicorn / logging level")
 
     # -------------------------------------------------------------------------
+    # Phase 3 — Clinical-Financial Bridge
+    # -------------------------------------------------------------------------
+    use_synthetic_overlay: bool = Field(
+        default=True,
+        description=(
+            "When True, the bridge fills missing FHIR data from synthetic scenario data. "
+            "When False, only real FHIR data is used — missing data = unmet criteria. "
+            "Set to False to test against live Epic sandbox data only."
+        ),
+    )
+    # bool coercion: pydantic-settings converts the string "true"/"false" from .env
+    # to a Python bool automatically. C# analogy: bool.Parse(config["USE_SYNTHETIC_OVERLAY"])
+
+    # -------------------------------------------------------------------------
     # Pydantic-settings configuration
     # model_config is a class-level dict (not an instance field) that tells
     # pydantic-settings HOW to load values.

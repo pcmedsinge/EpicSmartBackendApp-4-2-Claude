@@ -3,97 +3,463 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CFIP — CDS Hooks Test Harness</title>
+  <title>CFIP — Clinical Decision Support Demo</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f5f6fa;
+      background: #f0f2f5;
       color: #1a1a2e;
-      padding: 2rem;
-      max-width: 860px;
-      margin: 0 auto;
+      min-height: 100vh;
     }
 
-    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
-    .subtitle { font-size: 0.875rem; color: #666; margin-bottom: 2rem; }
-
-    /* ── Controls ─────────────────────────────────────────── */
-    .controls {
+    /* ── App header ──────────────────────────────────────────── */
+    .app-header {
+      background: linear-gradient(135deg, #0f2540 0%, #1a3a5c 60%, #1e4976 100%);
+      color: white;
+      padding: 1.1rem 1.5rem;
       display: flex;
-      gap: 0.75rem;
       align-items: center;
-      flex-wrap: wrap;
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
+      gap: 1.25rem;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.35);
     }
-
-    label { font-size: 0.875rem; font-weight: 600; }
-
-    select {
-      padding: 0.4rem 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      background: #fff;
-      cursor: pointer;
+    .app-header .logo-block { display: flex; flex-direction: column; gap: 0.1rem; }
+    .app-header .logo {
+      font-size: 1.75rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
     }
-
-    button#fire-btn {
-      padding: 0.45rem 1.25rem;
-      background: #2563eb;
-      color: #fff;
-      border: none;
+    .app-header .logo span { color: #60a5fa; }
+    .app-header .logo-sub {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .app-header .divider-line {
+      width: 1px;
+      height: 40px;
+      background: rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+    .app-header .title-block { display: flex; flex-direction: column; gap: 0.2rem; }
+    .app-header .app-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+    }
+    .app-header .app-subtitle {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.55);
+      font-weight: 400;
+    }
+    .app-header .header-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .app-header .badge {
+      background: rgba(96,165,250,0.25);
+      border: 1px solid rgba(96,165,250,0.5);
+      color: #bfdbfe;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .run-all-header-btn {
+      padding: 0.45rem 1.1rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.3);
       border-radius: 6px;
-      font-size: 0.875rem;
+      color: white;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s;
     }
-    button#fire-btn:hover  { background: #1d4ed8; }
-    button#fire-btn:active { background: #1e40af; }
-    button#fire-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+    .run-all-header-btn:hover { background: rgba(255,255,255,0.22); }
+    .run-all-header-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    .status {
-      font-size: 0.8rem;
-      color: #555;
-      margin-left: auto;
+    /* ── Standards strip — light background, no scroll ───────── */
+    .standards-strip {
+      background: #e8f0fe;
+      border-bottom: 2px solid #c7d9fc;
+      padding: 0.55rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .std-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: white;
+      border: 1px solid #c7d9fc;
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+    }
+    .std-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #1d4ed8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+    .std-desc {
+      font-size: 0.7rem;
+      color: #4b5563;
+      white-space: nowrap;
     }
 
-    /* ── Cards ────────────────────────────────────────────── */
-    #cards-container { display: flex; flex-direction: column; gap: 1rem; }
+    /* ── Markdown heading inside card detail ─────────────────── */
+    .md-heading {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #374151;
+      margin-top: 0.6rem;
+      margin-bottom: 0.2rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .md-meta {
+      font-size: 0.75rem;
+      color: #888;
+      font-style: normal;
+    }
 
-    .card {
-      background: #fff;
-      border: 1px solid #e0e0e0;
-      border-radius: 8px;
+    /* ── Main content wrapper ────────────────────────────────── */
+    .main-content {
+      max-width: 100%;
+      padding: 1.25rem 1.5rem 2rem;
+    }
+
+    /* ── Section label ───────────────────────────────────────── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #1d4ed8;
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .section-label::before {
+      content: "";
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: #2563eb;
+      border-radius: 2px;
+    }
+
+    /* ── Scenario selector cards ─────────────────────────────── */
+    .scenario-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .sc-card {
+      background: white;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1rem 1rem 0.875rem;
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      position: relative;
+      user-select: none;
+    }
+    .sc-card:hover { border-color: #93c5fd; box-shadow: 0 2px 12px rgba(59,130,246,0.12); }
+    .sc-card.selected { border-color: #2563eb; background: #eff6ff; }
+    .sc-card .sc-tag {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .tag-glp1     { background: #d1fae5; color: #065f46; }
+    .tag-pgx      { background: #fee2e2; color: #991b1b; }
+    .tag-oncology { background: #ede9fe; color: #5b21b6; }
+    .tag-denial   { background: #fef3c7; color: #92400e; }
+
+    .sc-card .sc-icon  { font-size: 1.4rem; margin-bottom: 0.4rem; }
+    .sc-card .sc-title { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.2rem; color: #111; }
+    .sc-card .sc-drug  { font-size: 0.75rem; color: #2563eb; font-weight: 600; margin-bottom: 0.15rem; }
+    .sc-card .sc-meta  { font-size: 0.72rem; color: #777; }
+
+    /* ── "Before / After" story section ─────────────────────── */
+    .story-section {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      margin-bottom: 1.25rem;
+    }
+    .story-header {
+      background: #1a3a5c;
+      color: white;
+      padding: 0.6rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .story-header .story-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .story-header .story-scenario-name {
+      font-size: 0.78rem;
+      color: #93c5fd;
+      font-weight: 600;
+    }
+    .story-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .story-col {
+      padding: 1rem 1.25rem;
+    }
+    .story-col:first-child {
+      border-right: 1px solid #f0f0f0;
+      background: #fffbeb;
+    }
+    .story-col:last-child {
+      background: #f0fdf4;
+    }
+    .story-col-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .story-col:first-child .story-col-header { color: #92400e; }
+    .story-col:last-child  .story-col-header { color: #15803d; }
+
+    .story-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: #444;
+      margin-bottom: 0.5rem;
+      line-height: 1.45;
+    }
+    .story-step .step-icon { flex-shrink: 0; margin-top: 0.05rem; }
+    .story-footer {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-top: 1px solid #e5e7eb;
+    }
+    .story-footer-col {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .story-footer-col:first-child {
+      color: #b45309;
+      border-right: 1px solid #e5e7eb;
+      background: #fffbeb;
+    }
+    .story-footer-col:last-child { color: #15803d; background: #f0fdf4; }
+
+    /* ── Main 2-column demo layout ───────────────────────────── */
+    .demo-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.25rem;
+      align-items: start;
     }
 
-    .card-indicator-bar {
-      height: 4px;
-      width: 100%;
+    /* ── Order context panel (left) ──────────────────────────── */
+    .order-panel {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
     }
+    .order-panel-header {
+      background: #1a3a5c;
+      color: white;
+      padding: 0.65rem 1rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .order-panel-body { padding: 1.25rem; }
+
+    .patient-avatar {
+      width: 46px;
+      height: 46px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1rem;
+      font-weight: 800;
+      margin-bottom: 0.6rem;
+    }
+    .patient-name { font-size: 1rem; font-weight: 700; }
+    .patient-meta { font-size: 0.75rem; color: #777; margin-bottom: 1rem; }
+
+    .order-field { margin-bottom: 0.7rem; }
+    .order-field-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #aaa;
+      margin-bottom: 0.15rem;
+    }
+    .order-field-value { font-size: 0.84rem; font-weight: 600; color: #111; }
+    .order-field-value.drug { color: #2563eb; }
+
+    .divider { height: 1px; background: #f0f0f0; margin: 0.875rem 0; }
+
+    .fire-btn {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .fire-btn:hover   { opacity: 0.9; }
+    .fire-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Intelligence panel (right) ──────────────────────────── */
+    .intelligence-panel { display: flex; flex-direction: column; gap: 1rem; }
+
+    /* Processing steps */
+    .processing-panel {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .processing-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 0.55rem 1rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+    }
+    .processing-steps {
+      padding: 0.75rem 1rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 20px;
+      background: #f5f5f5;
+      color: #bbb;
+      transition: all 0.25s;
+    }
+    .step.running { background: #eff6ff; color: #2563eb; }
+    .step.done    { background: #f0fdf4; color: #15803d; }
+    .step-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+    .step.running .step-dot { animation: blink 0.9s infinite; }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.25; }
+    }
+
+    /* Cards area */
+    .cards-area { display: flex; flex-direction: column; gap: 0.875rem; }
+
+    .empty-state {
+      background: white;
+      border: 2px dashed #e5e7eb;
+      border-radius: 10px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #ccc;
+    }
+    .empty-state .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+    .empty-state .empty-text { font-size: 0.9rem; color: #555; font-weight: 500; }
+    .empty-state .empty-sub  { font-size: 0.8rem; color: #777; margin-top: 0.35rem; }
+
+    /* CDS card rendering — identical logic, improved styling */
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+      animation: fadeUp 0.3s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-indicator-bar { height: 4px; }
     .indicator-info     { background: #3b82f6; }
     .indicator-warning  { background: #f59e0b; }
     .indicator-critical { background: #ef4444; }
 
     .card-body { padding: 1rem 1.25rem; }
-
     .card-header {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       margin-bottom: 0.5rem;
     }
-
     .card-badge {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 700;
       text-transform: uppercase;
       padding: 0.15rem 0.5rem;
@@ -104,314 +470,1530 @@
     .badge-warning  { background: #fef3c7; color: #b45309; }
     .badge-critical { background: #fee2e2; color: #b91c1c; }
 
-    .card-source { font-size: 0.75rem; color: #888; margin-left: auto; }
-
+    .card-source { font-size: 0.7rem; color: #bbb; margin-left: auto; }
     .card-summary {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
+      font-size: 0.975rem;
+      font-weight: 700;
+      margin-bottom: 0.45rem;
       line-height: 1.4;
+      color: #111;
     }
-
     .card-detail {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       color: #444;
-      line-height: 1.6;
-      white-space: pre-wrap;       /* preserves newlines from markdown */
+      line-height: 1.7;
+      white-space: pre-wrap;
       border-top: 1px solid #f0f0f0;
-      padding-top: 0.75rem;
-      margin-top: 0.5rem;
+      padding-top: 0.65rem;
+      margin-top: 0.45rem;
     }
-
-    /* strip markdown bold (**text**) for plain display */
-    .card-detail .md-bold { font-weight: 700; }
-
     .card-actions {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
-      margin-top: 0.875rem;
-      padding-top: 0.75rem;
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
       border-top: 1px solid #f0f0f0;
     }
-
     .suggestion-btn {
-      padding: 0.35rem 0.9rem;
+      padding: 0.32rem 0.85rem;
       background: #f0f9ff;
       border: 1px solid #bae6fd;
       border-radius: 6px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: #0369a1;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
     .suggestion-btn:hover { background: #e0f2fe; }
     .suggestion-btn.recommended::after { content: " ★"; color: #f59e0b; }
 
     .link-btn {
-      padding: 0.35rem 0.9rem;
+      padding: 0.32rem 0.85rem;
       background: #f5f3ff;
       border: 1px solid #ddd6fe;
       border-radius: 6px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: #6d28d9;
       text-decoration: none;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
     .link-btn:hover { background: #ede9fe; }
 
-    /* ── Empty / error states ─────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 2.5rem;
-      color: #aaa;
-      font-size: 0.9rem;
-      background: #fff;
-      border: 1px dashed #ddd;
-      border-radius: 8px;
-    }
-
+    /* Error state */
     .error-state {
-      padding: 1rem 1.25rem;
       background: #fef2f2;
       border: 1px solid #fecaca;
-      border-radius: 8px;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
       color: #991b1b;
-      font-size: 0.875rem;
+      font-size: 0.84rem;
     }
 
-    /* ── Raw JSON panel ───────────────────────────────────── */
-    details { margin-top: 1.5rem; }
-    summary {
-      font-size: 0.8rem;
-      color: #888;
-      cursor: pointer;
-      user-select: none;
-      padding: 0.25rem 0;
+    /* Run-all multi-column */
+    .multi-col-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      align-items: start;
     }
-    summary:hover { color: #444; }
+    .multi-col-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 0.65rem;
+    }
+
+    /* Status bar */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.55rem 1rem;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: #999;
+      margin-top: 1.25rem;
+    }
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      flex-shrink: 0;
+    }
+    #status-text { font-weight: 600; color: #555; }
+
+    /* ── Modal overlay ───────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: white;
+      border-radius: 12px;
+      max-width: 780px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(-12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .modal-header {
+      background: #1a3a5c;
+      color: white;
+      padding: 0.875rem 1.25rem;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 0.875rem; font-weight: 700; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.1rem 0.3rem;
+    }
+    .modal-close:hover { color: white; }
+    .modal-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-body pre {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 0.84rem;
+      line-height: 1.7;
+      color: #222;
+    }
+    .modal-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid #f0f0f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    .modal-btn {
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #e0e0e0;
+      background: white;
+      color: #444;
+    }
+    .modal-btn:hover { background: #f5f5f5; }
+    .modal-btn.primary {
+      background: #2563eb;
+      color: white;
+      border-color: #2563eb;
+    }
+    .modal-btn.primary:hover { background: #1d4ed8; }
+
+    /* Raw JSON */
+    details { margin-top: 1rem; }
+    summary { font-size: 0.82rem; color: #555; font-weight: 600; cursor: pointer; padding: 0.4rem 0; }
+    summary:hover { color: #222; }
     pre#raw-json {
       margin-top: 0.5rem;
       padding: 1rem;
       background: #1e1e2e;
       color: #cdd6f4;
       border-radius: 8px;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       overflow-x: auto;
+      max-height: 280px;
+      overflow-y: auto;
       white-space: pre;
     }
+
+    /* No scenario placeholder */
+    .no-selection-hint {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #ccc;
+      font-size: 0.82rem;
+    }
+    .no-selection-hint .hint-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
   </style>
 </head>
 <body>
 
-  <h1>CFIP — CDS Hooks Test Harness</h1>
-  <p class="subtitle">Simulates Epic Hyperspace firing a hook at the CFIP CDS service.</p>
-
-  <div class="controls">
-    <label for="scenario-select">Scenario</label>
-    <select id="scenario-select">
-      <option value="A">A — GLP-1 Prior Auth (Ozempic)</option>
-      <option value="B" disabled>B — PGx Safety (Clopidogrel) — Phase 4</option>
-      <option value="C" disabled>C — Oncology PA (Keytruda) — Phase 4</option>
-      <option value="D" disabled>D — Denial Prevention (MRI) — Phase 3</option>
-    </select>
-    <button id="fire-btn">Fire Hook</button>
-    <span class="status" id="status-text">Ready</span>
+  <!-- ── Epic-like header ──────────────────────────────────────── -->
+  <div class="app-header">
+    <div class="logo-block">
+      <div class="logo">CF<span>IP</span></div>
+      <div class="logo-sub">v1.0</div>
+    </div>
+    <div class="divider-line"></div>
+    <div class="title-block">
+      <div class="app-title">Clinical-Financial Intelligence Platform</div>
+      <div class="app-subtitle" style="color:rgba(255,255,255,0.85); font-weight:500;">Agentic SMART on FHIR Backend Service &nbsp;·&nbsp; CDS Hooks &nbsp;·&nbsp; Pharmacogenomics &nbsp;·&nbsp; Prior Authorization</div>
+    </div>
+    <div class="header-right">
+      <button class="run-all-header-btn" id="run-all-btn" onclick="runAllScenarios()">
+        ▶ Compare All 4 Scenarios
+      </button>
+      <button class="run-all-header-btn" onclick="showCfipFlow()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);">⬡ CFIP Flow</button>
+    </div>
   </div>
 
-  <div id="cards-container">
-    <div class="empty-state">Select a scenario and click <strong>Fire Hook</strong> to see CDS cards.</div>
+  <!-- Standards strip — answers "is this real HL7 FHIR?" -->
+  <div class="standards-strip">
+    <div class="std-item">
+      <span class="std-badge">HL7 CDS Hooks 1.0</span>
+      <span class="std-desc">Open standard — EHR sends order events, CFIP responds with guidance cards</span>
+    </div>
+    <div class="std-item">
+      <span class="std-badge">FHIR R4</span>
+      <span class="std-desc">Fast Healthcare Interoperability Resources — standard format for patient data</span>
+    </div>
+    <div class="std-item">
+      <span class="std-badge">SMART Backend Services</span>
+      <span class="std-desc">Machine-to-machine auth — CFIP accesses Epic with no user login required</span>
+    </div>
+    <div class="std-item">
+      <span class="std-badge">OpenAI GPT-4o-mini</span>
+      <span class="std-desc">Generates clinical narratives and appeal letters from evidence chain output</span>
+    </div>
   </div>
 
-  <details>
-    <summary>Raw JSON response</summary>
-    <pre id="raw-json">—</pre>
-  </details>
+  <div class="main-content">
+
+    <!-- ── Scenario selector ──────────────────────────────────── -->
+    <div class="section-label">Step 1 — Select a Clinical Scenario</div>
+    <div class="scenario-selector">
+      <div class="sc-card" data-id="A" onclick="selectScenario('A')">
+        <span class="sc-tag tag-glp1">GLP-1</span>
+        <div class="sc-icon">💊</div>
+        <div class="sc-title">Prior Authorization Check</div>
+        <div class="sc-drug">Ozempic (semaglutide) — diabetes injection</div>
+        <div class="sc-meta">Derrick Lin · UnitedHealthcare</div>
+        <div class="sc-meta" style="margin-top:0.3rem; font-style:italic; color:#444;">Insurance pre-approval required before prescribing</div>
+      </div>
+      <div class="sc-card" data-id="B" onclick="selectScenario('B')">
+        <span class="sc-tag tag-pgx">PGx Safety</span>
+        <div class="sc-icon">🧬</div>
+        <div class="sc-title">Genetic Drug Safety Alert</div>
+        <div class="sc-drug">Plavix (clopidogrel) — blood thinner</div>
+        <div class="sc-meta">Derrick Lin · Gene variant detected</div>
+        <div class="sc-meta" style="margin-top:0.3rem; font-style:italic; color:#444;">Patient's genetics make this drug ineffective</div>
+      </div>
+      <div class="sc-card" data-id="C" onclick="selectScenario('C')">
+        <span class="sc-tag tag-oncology">Oncology</span>
+        <div class="sc-icon">🔬</div>
+        <div class="sc-title">Cancer Drug PA · NCCN Guidelines</div>
+        <div class="sc-drug">Keytruda — cancer immunotherapy</div>
+        <div class="sc-meta">Alex Garcia · Lung cancer · Biomarker 80%</div>
+        <div class="sc-meta" style="margin-top:0.3rem; font-style:italic; color:#444;">Validates eligibility using NCCN oncology guidelines</div>
+      </div>
+      <div class="sc-card" data-id="D" onclick="selectScenario('D')">
+        <span class="sc-tag tag-denial">Denial Risk</span>
+        <div class="sc-icon">⚠️</div>
+        <div class="sc-title">Claim Denial Prevention</div>
+        <div class="sc-drug">MRI scan — lower back (Lumbar Spine)</div>
+        <div class="sc-meta">Alex Garcia · Aetna · 2 prior denials</div>
+        <div class="sc-meta" style="margin-top:0.3rem; font-style:italic; color:#444;">Flags missing documents before insurer denies claim</div>
+      </div>
+    </div>
+
+    <!-- ── Before / After story ───────────────────────────────── -->
+    <div class="section-label">Step 2 — See the Difference (illustrative workflow · live intelligence results shown in Step 3)</div>
+    <div class="story-section" id="story-section">
+      <div class="story-header">
+        <span class="story-title">Clinical Workflow Comparison</span>
+        <span class="story-scenario-name" id="story-scenario-name">— select a scenario above —</span>
+      </div>
+      <div class="story-body" id="story-body">
+        <div class="story-col" style="grid-column:1/-1; background:#fafafa; text-align:center; padding:1.5rem; color:#ccc; font-size:0.82rem;">
+          Select a scenario above to see how CFIP transforms the clinical workflow.
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Main demo layout ───────────────────────────────────── -->
+    <div class="section-label">Step 3 — Run CFIP Intelligence (sends a real HL7 CDS Hooks request)</div>
+    <div class="demo-layout">
+
+      <!-- Left: order context -->
+      <div class="order-panel">
+        <div class="order-panel-header">🏥 Physician Order Context</div>
+        <div class="order-panel-body" id="order-context">
+          <div class="no-selection-hint">
+            <div class="hint-icon">👆</div>
+            Select a scenario above
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: intelligence output -->
+      <div class="intelligence-panel">
+
+        <div class="processing-panel" id="processing-panel" style="display:none">
+          <div class="processing-header">⚡ Evidence Chain — live processing</div>
+          <div class="processing-steps" id="processing-steps"></div>
+        </div>
+
+        <div class="cards-area" id="cards-container">
+          <div class="empty-state">
+            <div class="empty-icon">🃏</div>
+            <div class="empty-text">CDS intelligence cards appear here</div>
+            <div class="empty-sub">Select a scenario → click Analyze Order</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <span>CFIP CDS Service · localhost</span>
+      <span id="status-text">Ready</span>
+    </div>
+
+    <!-- Raw JSON (developer view) -->
+    <details>
+      <summary>Raw JSON response (click to expand)</summary>
+      <pre id="raw-json">—</pre>
+    </details>
+
+  </div><!-- /main-content -->
+
+  <!-- ── Modal ───────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-title">—</span>
+        <button class="modal-close" onclick="closeModalDirect()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="modal-btn" onclick="closeModalDirect()">Close</button>
+        <button class="modal-btn primary" id="modal-copy-btn" onclick="copyModalText()">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // Scenario definitions — mirrors tools/cds_hooks_harness/scenarios.py
-    // These are the hook request payloads we POST to CFIP.
-    const SCENARIOS = {
-      A: {
-        hook: "order-select",
-        context: {
-          patientId: "erXuFYUfucBZaryVksYEcMg3",
-          userId: "Practitioner/demo-practitioner",
-          encounterId: "demo-encounter-001",
-          selections: ["MedicationRequest/demo-ozempic-order"],
-          draftOrders: {
-            resourceType: "Bundle",
-            entry: [{
-              resource: {
-                resourceType: "MedicationRequest",
-                id: "demo-ozempic-order",
-                status: "draft",
-                intent: "proposal",
-                subject: { reference: "Patient/erXuFYUfucBZaryVksYEcMg3" },
-                medicationCodeableConcept: {
-                  coding: [{
-                    system: "http://www.nlm.nih.gov/research/umls/rxnorm",
-                    code: "2200750",
-                    display: "semaglutide 0.5 MG/DOSE subcutaneous injection"
-                  }],
-                  text: "Ozempic (semaglutide) 0.5mg injection"
-                }
+  // =============================================================================
+  // SCENARIO METADATA — story, patient context, processing steps
+  // FHIR payloads below are UNCHANGED from Phase 5.
+  // =============================================================================
+
+  const SCENARIO_META = {
+    A: {
+      patient:   "Derrick Lin",
+      initials:  "DL",
+      dob:       "Nov 5, 1973 · Male · 51 yrs",
+      drug:      "Ozempic (semaglutide) 0.5 mg injection",
+      payer:     "UnitedHealthcare",
+      provider:  "Dr. Smith — Endocrinology",
+      encounter: "Outpatient · Diabetes Management",
+      storyName: "Dr. Smith orders Ozempic for Derrick Lin (T2DM, A1C 7.5%)",
+      without: [
+        "PA coordinator manually looks up UHC GLP-1 criteria (30–60 min)",
+        "Verifies A1C threshold and metformin step-therapy by phone",
+        "Submits PA form — waits 3–5 business days for determination",
+        "If denied, drafts appeal manually and resubmits (additional 1–2 weeks)",
+        "Physician unaware of denial risk at time of ordering",
+      ],
+      with: [
+        "CFIP checks UHC GLP-1 PA rules in real-time at order entry",
+        "A1C 7.5% and metformin 180-day history verified automatically",
+        "Approval probability surfaced to physician at order entry — before submission",
+        "PA bundle pre-built — ready to submit with one click",
+        "Zero phone calls · Zero forms · Physician informed instantly",
+      ],
+      withoutSummary: "⏱ 3–10 business days · High denial risk",
+      withSummary:    "⚡ Real-time · PA bundle ready before order is placed",
+      steps: ["Auth with Epic", "Fetch FHIR Record", "Payer Rules", "Denial Risk", "AI Narrative"],
+    },
+    B: {
+      patient:   "Derrick Lin",
+      initials:  "DL",
+      dob:       "Nov 5, 1973 · Male · 51 yrs",
+      drug:      "Clopidogrel (Plavix) 75 mg tablet",
+      payer:     "UnitedHealthcare",
+      provider:  "Dr. Smith — Cardiology",
+      encounter: "Post-PCI Follow-up",
+      storyName: "Dr. Smith orders Clopidogrel for Derrick Lin (post-PCI)",
+      without: [
+        "Clopidogrel ordered — no genetic testing integrated into workflow",
+        "Patient is CYP2C19 *2/*2 poor metabolizer (test result in separate system)",
+        "Clopidogrel prescribed; active metabolite not produced — drug ineffective",
+        "Patient at risk for stent thrombosis or MI recurrence",
+        "Adverse event detected only after hospital readmission",
+      ],
+      with: [
+        "CFIP detects CYP2C19 *2/*2 genotype from patient record instantly",
+        "CPIC guideline triggered: clopidogrel is contraindicated for this genotype",
+        "Critical safety alert surfaced before order is signed",
+        "Alternative agents recommended: prasugrel or ticagrelor",
+        "Patient safety protected · Readmission prevented · Alert in seconds",
+      ],
+      withoutSummary: "⚠️ Adverse event risk · Detected only after harm",
+      withSummary:    "🛡 Safety alert at order entry · Harm prevented",
+      steps: ["Auth with Epic", "Fetch FHIR Record", "PGx Genotype", "CPIC Guidelines", "Safety Alert"],
+    },
+    C: {
+      patient:   "Alex Garcia",
+      initials:  "AG",
+      dob:       "Apr 22, 1958 · Male · 66 yrs",
+      drug:      "Keytruda (pembrolizumab) 200 mg IV q3w",
+      payer:     "UnitedHealthcare",
+      provider:  "Dr. Chen — Oncology",
+      encounter: "Oncology · NSCLC Treatment",
+      storyName: "Dr. Chen orders Keytruda for Alex Garcia (NSCLC, PD-L1 80%)",
+      without: [
+        "Oncology coordinator manually reviews NCCN NSCLC guidelines (1–2 hrs)",
+        "Calls UHC to verify PD-L1 eligibility threshold (Category 1 criteria)",
+        "Manually builds PA packet: biomarker report, prior regimen docs, diagnosis codes",
+        "Submits PA — waits 5–7 business days; high risk of documentation denial",
+        "If denied, appeal process adds 2–4 weeks; patient may miss treatment window",
+      ],
+      with: [
+        "CFIP validates NCCN Category 1 pathway in real-time (KEYNOTE-024)",
+        "PD-L1 TPS 80% ≥ 50% threshold confirmed · Prior carboplatin documented",
+        "PA bundle auto-assembled: diagnosis C34.10, biomarker, prior regimen",
+        "UHC PA ready to submit at order entry · No manual work required",
+        "Appeal letter pre-drafted · Patient treatment starts on schedule",
+      ],
+      withoutSummary: "⏱ 1–2 weeks to PA approval · Treatment delay risk",
+      withSummary:    "⚡ PA bundle ready in real-time · NCCN Category 1 validated",
+      steps: ["Auth with Epic", "Fetch FHIR Record", "NCCN Pathway", "Biomarker Check", "PA Bundle", "AI Narrative"],
+    },
+    D: {
+      patient:   "Alex Garcia",
+      initials:  "AG",
+      dob:       "Apr 22, 1958 · Male · 66 yrs",
+      drug:      "MRI Lumbar Spine w/o contrast (CPT 72148)",
+      payer:     "Aetna",
+      provider:  "Dr. Patel — Orthopedics",
+      encounter: "Outpatient · Back Pain",
+      storyName: "Dr. Patel orders MRI Lumbar Spine for Alex Garcia (Aetna)",
+      without: [
+        "Order submitted without reviewing Aetna-specific documentation requirements",
+        "Aetna denies — 3rd denial for this patient (same reason: 'insufficient documentation')",
+        "Missing: 6 weeks of physical therapy notes + baseline lumbar X-ray",
+        "Staff drafts appeal letter manually — 1–2 weeks to write and submit",
+        "Patient waits 4–6 weeks for imaging that could have been pre-approved",
+      ],
+      with: [
+        "CFIP detects 2 prior Aetna denials for this patient at order entry",
+        "Denial pattern identified: 'insufficient documentation' (100% of past denials)",
+        "Missing documentation flagged instantly: PT notes + X-ray not on file",
+        "Physician alerted before signing — can gather docs before submitting",
+        "Appeal letter auto-drafted and ready if denial still occurs",
+      ],
+      withoutSummary: "❌ 3rd denial likely · 4–6 weeks patient delay · Manual appeal",
+      withSummary:    "✅ Denial prevented at order entry · Appeal pre-drafted",
+      steps: ["Auth with Epic", "Fetch FHIR Record", "Payer History", "Denial Patterns", "Appeal Draft"],
+    },
+  };
+
+  // =============================================================================
+  // FHIR PAYLOADS — unchanged from Phase 5
+  // =============================================================================
+
+  const SCENARIOS = {
+    A: {
+      hook: "order-select",
+      context: {
+        patientId: "erXuFYUfucBZaryVksYEcMg3",
+        userId: "Practitioner/demo-practitioner",
+        encounterId: "demo-encounter-001",
+        selections: ["MedicationRequest/demo-ozempic-order"],
+        draftOrders: {
+          resourceType: "Bundle",
+          entry: [{
+            resource: {
+              resourceType: "MedicationRequest",
+              id: "demo-ozempic-order",
+              status: "draft",
+              intent: "proposal",
+              subject: { reference: "Patient/erXuFYUfucBZaryVksYEcMg3" },
+              medicationCodeableConcept: {
+                coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "2200750", display: "semaglutide 0.5 MG/DOSE subcutaneous injection" }],
+                text: "Ozempic (semaglutide) 0.5mg injection"
               }
-            }]
-          }
-        },
-        prefetch: {
-          patient: {
-            resourceType: "Patient",
-            id: "erXuFYUfucBZaryVksYEcMg3",
-            name: [{ use: "official", family: "Lin", given: ["Derrick"] }],
-            gender: "male",
-            birthDate: "1973-11-05"
-          },
-          medications: {
-            resourceType: "Bundle",
-            type: "searchset",
-            total: 1,
-            entry: [{
-              resource: {
-                resourceType: "MedicationRequest",
-                id: "demo-ozempic-order",
-                status: "draft",
-                medicationCodeableConcept: {
-                  coding: [{
-                    system: "http://www.nlm.nih.gov/research/umls/rxnorm",
-                    code: "2200750",
-                    display: "semaglutide 0.5 MG/DOSE subcutaneous injection"
-                  }],
-                  text: "Ozempic (semaglutide) 0.5mg injection"
-                }
-              }
-            }]
-          }
+            }
+          }]
         }
+      },
+      prefetch: {
+        patient: { resourceType: "Patient", id: "erXuFYUfucBZaryVksYEcMg3", name: [{ use: "official", family: "Lin", given: ["Derrick"] }], gender: "male", birthDate: "1973-11-05" },
+        medications: { resourceType: "Bundle", type: "searchset", total: 1, entry: [{ resource: { resourceType: "MedicationRequest", id: "demo-ozempic-order", status: "draft", medicationCodeableConcept: { coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "2200750", display: "semaglutide 0.5 MG/DOSE subcutaneous injection" }], text: "Ozempic (semaglutide) 0.5mg injection" } } }] }
       }
+    },
+
+    B: {
+      hook: "order-select",
+      context: {
+        patientId: "erXuFYUfucBZaryVksYEcMg3",
+        userId: "Practitioner/demo-practitioner",
+        encounterId: "demo-encounter-002",
+        selections: ["MedicationRequest/demo-clopidogrel-order"],
+        draftOrders: {
+          resourceType: "Bundle",
+          entry: [{
+            resource: {
+              resourceType: "MedicationRequest",
+              id: "demo-clopidogrel-order",
+              status: "draft",
+              intent: "proposal",
+              subject: { reference: "Patient/erXuFYUfucBZaryVksYEcMg3" },
+              medicationCodeableConcept: {
+                coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "309362", display: "clopidogrel 75 MG oral tablet" }],
+                text: "clopidogrel (Plavix) 75mg tablet"
+              },
+              dosageInstruction: [{ text: "75mg by mouth once daily" }]
+            }
+          }]
+        }
+      },
+      prefetch: {
+        patient: { resourceType: "Patient", id: "erXuFYUfucBZaryVksYEcMg3", name: [{ use: "official", family: "Lin", given: ["Derrick"] }], gender: "male", birthDate: "1973-11-05" },
+        medications: { resourceType: "Bundle", type: "searchset", total: 1, entry: [{ resource: { resourceType: "MedicationRequest", id: "demo-clopidogrel-order", status: "draft", medicationCodeableConcept: { coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "309362", display: "clopidogrel 75 MG oral tablet" }], text: "clopidogrel (Plavix) 75mg tablet" } } }] }
+      }
+    },
+
+    C: {
+      hook: "order-select",
+      context: {
+        patientId: "eAB3mDIBBcyUKviyzrxsnAw3",
+        userId: "Practitioner/demo-practitioner",
+        encounterId: "demo-encounter-003",
+        selections: ["MedicationRequest/demo-keytruda-order"],
+        draftOrders: {
+          resourceType: "Bundle",
+          entry: [{
+            resource: {
+              resourceType: "MedicationRequest",
+              id: "demo-keytruda-order",
+              status: "draft",
+              intent: "proposal",
+              subject: { reference: "Patient/eAB3mDIBBcyUKviyzrxsnAw3" },
+              medicationCodeableConcept: {
+                coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "1547545", display: "pembrolizumab 100 MG/4ML injection" }],
+                text: "Keytruda (pembrolizumab) 200mg IV every 3 weeks"
+              },
+              dosageInstruction: [{ text: "200mg IV over 30 min every 3 weeks" }]
+            }
+          }]
+        }
+      },
+      prefetch: {
+        patient: { resourceType: "Patient", id: "eAB3mDIBBcyUKviyzrxsnAw3", name: [{ use: "official", family: "Garcia", given: ["Alex"] }], gender: "male", birthDate: "1958-04-22" },
+        medications: { resourceType: "Bundle", type: "searchset", total: 1, entry: [{ resource: { resourceType: "MedicationRequest", id: "demo-keytruda-order", status: "draft", medicationCodeableConcept: { coding: [{ system: "http://www.nlm.nih.gov/research/umls/rxnorm", code: "1547545", display: "pembrolizumab 100 MG/4ML injection" }], text: "Keytruda (pembrolizumab) 200mg IV every 3 weeks" } } }] }
+      }
+    },
+
+    D: {
+      hook: "order-select",
+      context: {
+        patientId: "eAB3mDIBBcyUKviyzrxsnAw3",
+        userId: "Practitioner/demo-practitioner",
+        encounterId: "demo-encounter-004",
+        selections: ["ServiceRequest/demo-mri-order"],
+        draftOrders: {
+          resourceType: "Bundle",
+          entry: [{
+            resource: {
+              resourceType: "ServiceRequest",
+              id: "demo-mri-order",
+              status: "draft",
+              intent: "proposal",
+              subject: { reference: "Patient/eAB3mDIBBcyUKviyzrxsnAw3" },
+              code: {
+                coding: [{ system: "http://www.ama-assn.org/go/cpt", code: "72148", display: "MRI lumbar spine without contrast" }],
+                text: "MRI Lumbar Spine without contrast"
+              }
+            }
+          }]
+        }
+      },
+      prefetch: {
+        patient: { resourceType: "Patient", id: "eAB3mDIBBcyUKviyzrxsnAw3", name: [{ use: "official", family: "Garcia", given: ["Alex"] }], gender: "male", birthDate: "1958-04-22" },
+        medications: { resourceType: "Bundle", type: "searchset", total: 0, entry: [] }
+      }
+    }
+  };
+
+  // =============================================================================
+  // STATE
+  // =============================================================================
+  let selectedId = null;
+  const _traceStore = {};  // keyed by scenario id or "last" — stores agent_trace from each response
+
+  // =============================================================================
+  // SCENARIO SELECTION
+  // =============================================================================
+  function selectScenario(id) {
+    selectedId = id;
+
+    // Highlight selected card
+    document.querySelectorAll(".sc-card").forEach(c => c.classList.remove("selected"));
+    document.querySelector(`.sc-card[data-id="${id}"]`).classList.add("selected");
+
+    renderStory(id);
+    renderOrderContext(id);
+
+    // Reset intelligence panel
+    document.getElementById("processing-panel").style.display = "none";
+    document.getElementById("cards-container").innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-text">Click <strong>Analyze Order</strong> to send a CDS Hooks request</div>
+        <div class="empty-sub">CFIP receives the order via HL7 CDS Hooks and returns intelligence cards</div>
+      </div>`;
+    document.getElementById("status-text").textContent = "Scenario selected — ready to fire";
+  }
+
+  // =============================================================================
+  // STORY (Before / After)
+  // =============================================================================
+  function renderStory(id) {
+    const m = SCENARIO_META[id];
+    document.getElementById("story-scenario-name").textContent = m.storyName;
+
+    const withoutRows = m.without.map(s =>
+      `<div class="story-step"><span class="step-icon">❌</span><span>${s}</span></div>`
+    ).join("");
+
+    const withRows = m.with.map(s =>
+      `<div class="story-step"><span class="step-icon">✅</span><span>${s}</span></div>`
+    ).join("");
+
+    document.getElementById("story-body").innerHTML = `
+      <div class="story-col">
+        <div class="story-col-header">⚠️ Without CFIP — Manual Process</div>
+        ${withoutRows}
+      </div>
+      <div class="story-col">
+        <div class="story-col-header">⚡ With CFIP — Agentic Intelligence</div>
+        ${withRows}
+      </div>
+      <div class="story-footer">
+        <div class="story-footer-col">${m.withoutSummary}</div>
+        <div class="story-footer-col">${m.withSummary}</div>
+      </div>
+    `;
+  }
+
+  // =============================================================================
+  // ORDER CONTEXT PANEL
+  // =============================================================================
+  function renderOrderContext(id) {
+    const m = SCENARIO_META[id];
+    document.getElementById("order-context").innerHTML = `
+      <div class="patient-avatar">${m.initials}</div>
+      <div class="patient-name">${m.patient}</div>
+      <div class="patient-meta">${m.dob}</div>
+      <div class="divider"></div>
+      <div class="order-field">
+        <div class="order-field-label">Order</div>
+        <div class="order-field-value drug">${m.drug}</div>
+      </div>
+      <div class="order-field">
+        <div class="order-field-label">Payer</div>
+        <div class="order-field-value">${m.payer}</div>
+      </div>
+      <div class="order-field">
+        <div class="order-field-label">Provider</div>
+        <div class="order-field-value">${m.provider}</div>
+      </div>
+      <div class="order-field">
+        <div class="order-field-label">Encounter</div>
+        <div class="order-field-value">${m.encounter}</div>
+      </div>
+      <div class="divider"></div>
+      <button class="fire-btn" id="fire-btn" onclick="fireHook()">
+        ▶ Analyze Order
+      </button>
+      <div style="font-size:0.75rem; color:#555; text-align:center; margin-top:0.5rem; font-weight:500;">
+        Sends a live HL7 CDS Hooks request to CFIP
+      </div>
+    `;
+  }
+
+  // =============================================================================
+  // PROCESSING ANIMATION
+  // =============================================================================
+  function showProcessingSteps(id) {
+    const steps = SCENARIO_META[id]?.steps || ["Processing"];
+    const panel = document.getElementById("processing-panel");
+    panel.style.display = "block";
+    document.getElementById("processing-steps").innerHTML = steps.map((s, i) =>
+      `<div class="step" id="step-${i}"><div class="step-dot"></div>${s}</div>`
+    ).join("");
+
+    // Start first step
+    document.getElementById("step-0")?.classList.add("running");
+    return steps.length;
+  }
+
+  async function animateSteps(count, totalMs) {
+    const delay = Math.max(200, totalMs / (count + 1));
+    for (let i = 0; i < count; i++) {
+      await sleep(delay);
+      const el = document.getElementById(`step-${i}`);
+      if (el) {
+        el.classList.remove("running");
+        el.classList.add("done");
+        el.innerHTML = `<div class="step-dot"></div>✓ ${el.textContent.trim()}`;
+      }
+      if (i + 1 < count) {
+        document.getElementById(`step-${i+1}`)?.classList.add("running");
+      }
+    }
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // =============================================================================
+  // CARD RENDERING — identical logic to Phase 5
+  // =============================================================================
+  function uuidv4() {
+    return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+      (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+    );
+  }
+
+  function renderMarkdown(text) {
+    if (!text) return "";
+    return text
+      // ### Heading → styled section label
+      .replace(/^###\s+(.+)$/gm, '<span class="md-heading">$1</span>')
+      // **bold** → strong
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      // _metadata line_ → subtle grey label (strips underscores, applies meta style)
+      .replace(/_(.*?)_/g, '<span class="md-meta">$1</span>')
+      // newline → line break
+      .replace(/\n/g, "<br>");
+  }
+
+  function renderCard(card) {
+    const indicator  = card.indicator || "info";
+    const suggestions = (card.suggestions || []).map(s => `
+      <button class="suggestion-btn ${s.isRecommended ? "recommended" : ""}"
+              onclick="handleSuggestion(event, '${s.label.replace(/'/g, "\\'")}')">
+        ${s.label}
+      </button>`).join("");
+    const links = (card.links || []).map(l =>
+      `<a class="link-btn" href="#" onclick="handleLink(event,'${l.url}','${l.label}')">${l.label}</a>`
+    ).join("");
+    const actions = (suggestions || links)
+      ? `<div class="card-actions">${suggestions}${links}</div>` : "";
+    const detail = card.detail
+      ? `<div class="card-detail">${renderMarkdown(card.detail)}</div>` : "";
+
+    return `
+      <div class="card">
+        <div class="card-indicator-bar indicator-${indicator}"></div>
+        <div class="card-body">
+          <div class="card-header">
+            <span class="card-badge badge-${indicator}">${indicator}</span>
+            <span class="card-source">${card.source?.label || "CFIP"}</span>
+          </div>
+          <div class="card-summary">${card.summary}</div>
+          ${detail}${actions}
+        </div>
+      </div>`;
+  }
+
+  // =============================================================================
+  // FIRE SINGLE HOOK — fetch logic unchanged
+  // =============================================================================
+  async function fireHook() {
+    if (!selectedId) return;
+    const scenario  = SCENARIOS[selectedId];
+    const statusEl  = document.getElementById("status-text");
+    const container = document.getElementById("cards-container");
+    const rawEl     = document.getElementById("raw-json");
+
+    setButtons(true);
+    container.innerHTML = "";
+    statusEl.textContent = "Firing hook...";
+
+    const stepCount   = showProcessingSteps(selectedId);
+    const animPromise = animateSteps(stepCount, 1800);
+
+    const payload = {
+      hook:         scenario.hook,
+      hookInstance: uuidv4(),
+      context:      scenario.context,
+      prefetch:     scenario.prefetch,
     };
 
-    // Generate a UUID v4 — used as hookInstance (unique per hook firing)
-    function uuidv4() {
-      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-      );
-    }
+    try {
+      const [response] = await Promise.all([
+        fetch("/cds-services/cfip-order-intelligence", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(payload),
+        }),
+        animPromise,
+      ]);
 
-    // Convert **bold** markdown to <strong> tags for display
-    function renderMarkdown(text) {
-      if (!text) return "";
-      return text
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n/g, "<br>");
-    }
+      const body = await response.json();
+      rawEl.textContent = JSON.stringify(body, null, 2);
 
-    function renderCard(card, index) {
-      const indicator = card.indicator || "info";
-      const badgeClass = `badge-${indicator}`;
-      const barClass   = `indicator-${indicator}`;
+      // Store agent trace for "View Full Analysis" modal
+      if (body.agent_trace) _traceStore["last"] = body.agent_trace;
 
-      const suggestions = (card.suggestions || []).map(s => `
-        <button class="suggestion-btn ${s.isRecommended ? 'recommended' : ''}"
-                onclick="alert('PA submission wired in Phase 5')">
-          ${s.label}
-        </button>`).join("");
-
-      const links = (card.links || []).map(l => `
-        <a class="link-btn" href="${l.url}" target="_blank">${l.label}</a>
-      `).join("");
-
-      const actions = (suggestions || links)
-        ? `<div class="card-actions">${suggestions}${links}</div>`
-        : "";
-
-      const detail = card.detail
-        ? `<div class="card-detail">${renderMarkdown(card.detail)}</div>`
-        : "";
-
-      return `
-        <div class="card">
-          <div class="card-indicator-bar ${barClass}"></div>
-          <div class="card-body">
-            <div class="card-header">
-              <span class="card-badge ${badgeClass}">${indicator}</span>
-              <span class="card-source">${card.source?.label || "CFIP"}</span>
-            </div>
-            <div class="card-summary">${card.summary}</div>
-            ${detail}
-            ${actions}
-          </div>
-        </div>`;
-    }
-
-    async function fireHook() {
-      const scenarioId = document.getElementById("scenario-select").value;
-      const scenario   = SCENARIOS[scenarioId];
-      const btn        = document.getElementById("fire-btn");
-      const statusEl   = document.getElementById("status-text");
-      const container  = document.getElementById("cards-container");
-      const rawEl      = document.getElementById("raw-json");
-
-      if (!scenario) {
-        container.innerHTML = `<div class="error-state">Scenario ${scenarioId} not yet implemented.</div>`;
+      if (!response.ok) {
+        container.innerHTML = `<div class="error-state"><strong>HTTP ${response.status}</strong><br>${JSON.stringify(body, null, 2)}</div>`;
+        statusEl.textContent = `Error ${response.status}`;
         return;
       }
 
-      btn.disabled    = true;
-      statusEl.textContent = "Firing hook...";
-      container.innerHTML  = "";
+      const cards = body.cards || [];
+      container.innerHTML = cards.length === 0
+        ? `<div class="empty-state"><div class="empty-icon">ℹ️</div><div class="empty-text">No cards returned.</div></div>`
+        : cards.map(renderCard).join("");
 
-      const payload = {
+      statusEl.textContent = `${cards.length} intelligence card${cards.length !== 1 ? "s" : ""} returned`;
+
+    } catch (err) {
+      container.innerHTML = `<div class="error-state">
+        <strong>Connection error</strong> — is CFIP running?<br>
+        <code>python -m app.main</code><br><br>${err}
+      </div>`;
+      statusEl.textContent = "Connection error";
+    } finally {
+      setButtons(false);
+    }
+  }
+
+  // =============================================================================
+  // RUN ALL SCENARIOS — fetch logic unchanged, new visual layout
+  // =============================================================================
+  async function runAllScenarios() {
+    const statusEl  = document.getElementById("status-text");
+    const container = document.getElementById("cards-container");
+    const rawEl     = document.getElementById("raw-json");
+
+    setButtons(true);
+    statusEl.textContent = "Running all 4 scenarios in parallel...";
+    document.getElementById("processing-panel").style.display = "none";
+
+    const ids = Object.keys(SCENARIOS);
+
+    // Build 4-column grid immediately with "firing..." placeholders
+    container.innerHTML = `<div class="multi-col-grid">${
+      ids.map(id => {
+        const m = SCENARIO_META[id];
+        return `
+          <div>
+            <div class="multi-col-header">${m.drug.split(" ")[0]} · ${m.patient.split(" ")[0]}</div>
+            <div id="run-col-${id}">
+              <div class="empty-state" style="padding:1.25rem">
+                <div class="empty-icon" style="font-size:1.1rem">⟳</div>
+                <div class="empty-text" style="font-size:0.75rem">Firing...</div>
+              </div>
+            </div>
+          </div>`;
+      }).join("")
+    }</div>`;
+
+    const allRaw   = {};
+    let totalCards = 0;
+
+    await Promise.allSettled(ids.map(async id => {
+      const scenario = SCENARIOS[id];
+      const payload  = {
         hook:         scenario.hook,
         hookInstance: uuidv4(),
         context:      scenario.context,
         prefetch:     scenario.prefetch,
       };
-
       try {
         const response = await fetch("/cds-services/cfip-order-intelligence", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify(payload),
         });
-
         const body = await response.json();
-        rawEl.textContent = JSON.stringify(body, null, 2);
-
-        if (!response.ok) {
-          container.innerHTML = `<div class="error-state">
-            <strong>HTTP ${response.status}</strong><br>
-            ${JSON.stringify(body, null, 2)}
-          </div>`;
-          statusEl.textContent = `Error ${response.status}`;
-          return;
-        }
-
+        allRaw[id]  = body;
+        if (body.agent_trace) _traceStore[id] = body.agent_trace;
         const cards = body.cards || [];
-        if (cards.length === 0) {
-          container.innerHTML = `<div class="empty-state">No cards returned.</div>`;
-        } else {
-          container.innerHTML = cards.map(renderCard).join("");
-        }
-
-        statusEl.textContent = `${cards.length} card(s) returned`;
-
+        totalCards += cards.length;
+        document.getElementById(`run-col-${id}`).innerHTML = cards.length === 0
+          ? `<div class="empty-state" style="padding:1rem"><div class="empty-text" style="font-size:0.75rem">No cards.</div></div>`
+          : cards.map(renderCard).join("");
       } catch (err) {
-        container.innerHTML = `<div class="error-state">
-          <strong>Connection error</strong> — is CFIP running?<br>
-          <code>python -m app.main</code><br><br>${err}
-        </div>`;
-        statusEl.textContent = "Connection error";
-      } finally {
-        btn.disabled = false;
+        document.getElementById(`run-col-${id}`).innerHTML =
+          `<div class="error-state" style="font-size:0.75rem">Error: ${err}</div>`;
       }
+    }));
+
+    rawEl.textContent = JSON.stringify(allRaw, null, 2);
+    statusEl.textContent = `${totalCards} intelligence cards across 4 scenarios`;
+    setButtons(false);
+  }
+
+  // =============================================================================
+  // HELPERS
+  // =============================================================================
+  function setButtons(disabled) {
+    const fireBtn = document.getElementById("fire-btn");
+    if (fireBtn) fireBtn.disabled = disabled;
+    const runAllBtn = document.getElementById("run-all-btn");
+    if (runAllBtn) runAllBtn.disabled = disabled;
+  }
+
+  // =============================================================================
+  // CFIP FLOW DIAGRAM
+  // =============================================================================
+  function showCfipFlow() {
+    const s = (color, text) =>
+      `<span style="background:${color}22;color:${color};font-size:0.68rem;font-weight:800;
+       padding:0.1rem 0.5rem;border-radius:4px;letter-spacing:0.04em;flex-shrink:0;">${text}</span>`;
+
+    const step = (color, label, desc, sub) => `
+      <div style="display:flex;align-items:flex-start;gap:0.6rem;padding:0.5rem 0.7rem;
+                  border-left:3px solid ${color};background:${color}0d;border-radius:0 6px 6px 0;margin-bottom:0.4rem;">
+        ${s(color, label)}
+        <div>
+          <div style="font-size:0.82rem;font-weight:700;color:#1e293b;line-height:1.3;">${desc}</div>
+          ${sub ? `<div style="font-size:0.74rem;font-weight:600;color:#475569;margin-top:0.2rem;">${sub}</div>` : ""}
+        </div>
+      </div>`;
+
+    const box = (title, color, content) => `
+      <div style="border:1.5px solid ${color}55;border-radius:8px;overflow:hidden;margin-bottom:0.5rem;">
+        <div style="background:${color}18;padding:0.4rem 0.75rem;font-size:0.74rem;font-weight:700;
+                    color:${color};text-transform:uppercase;letter-spacing:0.07em;">${title}</div>
+        <div style="padding:0.6rem 0.75rem 0.35rem;">${content}</div>
+      </div>`;
+
+    const pill = (color, text) =>
+      `<span style="display:inline-block;background:${color}18;color:${color};border:1px solid ${color}44;
+       font-size:0.73rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;margin:0.2rem 0.25rem 0 0;">${text}</span>`;
+
+    // ── Tab 1: 3-column horizontal layout — no scrollbar, uses full width ────
+    const tab1Html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      <div style="display:flex;gap:0.9rem;align-items:flex-start;">
+
+        <!-- ① EHR Trigger (narrow left column) -->
+        <div style="min-width:195px;max-width:230px;">
+          ${box("① Epic EHR — Trigger", "#3b82f6", `
+            <div style="font-size:0.84rem;font-weight:600;color:#334155;line-height:1.75;">
+              Clinician selects a drug order in Epic Hyperspace.<br><br>
+              Epic fires an <strong>order-select</strong> CDS Hooks 1.0 event to CFIP with patient context and prefetch data.
+            </div>
+          `)}
+        </div>
+
+        <!-- horizontal flow arrow -->
+        <div style="padding-top:2.8rem;font-size:1.8rem;color:#94a3b8;flex-shrink:0;line-height:1;">→</div>
+
+        <!-- ② CFIP Orchestrator (wide center, flex:1) -->
+        <div style="flex:1;min-width:0;">
+          ${box("② CFIP Orchestrator — Plan · Fetch · Execute · Verify · Compose", "#6366f1", `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.35rem;">
+              ${step("#60a5fa","PLAN","Classify drug → select evidence chain","GLP-1 · Oncology · PGx · Denial Prevention")}
+              ${step("#34d399","FHIR","JWT RS384 auth → fetch patient bundle","Patient · Medications · Labs · Conditions · Coverage")}
+              ${step("#a78bfa","EXECUTE","Clinical rules engine — deterministic","CPIC drug-gene · NCCN pathway · denial scoring · PA bundle")}
+              ${step("#fbbf24","AI","GPT-4o-mini — synthesise clinical narrative","Evidence summary · risk factors · recommended actions")}
+              ${step("#2dd4bf","VERIFY","Check evidence completeness","Flag FHIR gaps · log data sources")}
+              ${step("#f9a8d4","COMPOSE","Assemble CDS cards from evidence","Denial risk · PGx · NCCN · PA bundle")}
+            </div>
+            <div style="font-size:0.74rem;color:#64748b;font-weight:600;margin:0.1rem 0 0.3rem 0.25rem;">↳ <em>If denial risk is critical (&lt;50% approval):</em></div>
+            ${step("#fbbf24","AI","GPT-4o-mini — draft appeal letter to Medical Director","Cites met criteria · references payer policy · proposes resolution")}
+          `)}
+        </div>
+
+        <!-- horizontal flow arrow -->
+        <div style="padding-top:2.8rem;font-size:1.8rem;color:#94a3b8;flex-shrink:0;line-height:1;">→</div>
+
+        <!-- ③ CDS Cards (narrow right column) -->
+        <div style="min-width:205px;max-width:250px;">
+          ${box("③ Epic EHR — Intelligence Cards", "#10b981", `
+            <div style="font-size:0.84rem;font-weight:600;color:#334155;line-height:1.75;margin-bottom:0.6rem;">
+              CFIP returns structured CDS cards at the point of prescribing — no screen switch, no portal login.
+            </div>
+            ${pill("#60a5fa","Denial risk score")}
+            ${pill("#a78bfa","PGx safety alert")}
+            ${pill("#fbbf24","NCCN validation")}
+            ${pill("#34d399","PA bundle ready")}
+            ${pill("#f9a8d4","AI appeal draft")}
+          `)}
+        </div>
+
+      </div>
+
+      <hr style="border:none;border-top:1.5px solid #e2e8f0;margin:0.9rem 0 0.7rem;">
+
+      <p style="font-size:0.84rem;font-weight:700;color:#334155;line-height:1.85;margin:0;font-style:italic;">
+        CFIP follows an <strong style="color:#1e293b;">agentic architecture pattern</strong> — the orchestrator autonomously plans which evidence chain to run, fetches real patient data from Epic, applies clinical rules, and generates AI narratives, all within a single CDS hook response and without human intervention. Clinical decision steps (CPIC, NCCN, denial scoring) are intentionally <strong style="color:#1e293b;">deterministic for patient safety</strong> — an LLM does not make safety-critical decisions. Additional drug classes, payer rules, or clinical pathways can be supported by extending the evidence chain configuration and rules engine; the orchestrator requires no changes.
+      </p>
+    </div>`;
+
+    // ── Tab 2: wide swimlane flow diagram (fills modal, no scrollbar) ─────────
+    const tab2Html = `
+    <div>
+      <svg viewBox="0 0 1200 505" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;height:auto;max-height:calc(90vh - 210px);display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+        <defs>
+          <marker id="cf-arr"  viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker>
+          <marker id="cf-arrb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/></marker>
+          <marker id="cf-arrg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#34d399"/></marker>
+          <marker id="cf-arry" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/></marker>
+        </defs>
+
+        <!-- ── background + lane fills ── -->
+        <rect width="1200" height="505" fill="#f8fafc" rx="12" stroke="#e2e8f0" stroke-width="1"/>
+        <rect x="0"   y="0" width="185"  height="505" fill="#eff6ff" opacity="0.55" rx="12"/>
+        <rect x="185" y="0" width="690"  height="505" fill="#f1f5f9" opacity="0.35"/>
+        <rect x="875" y="0" width="325"  height="505" fill="#f0fdf4" opacity="0.55"/>
+        <line x1="185" y1="45" x2="185" y2="505" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+        <line x1="875" y1="45" x2="875" y2="505" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,4"/>
+
+        <!-- ── lane headers ── -->
+        <rect x="5"   y="6" width="175" height="32" rx="6" fill="#3b82f6"/>
+        <text x="92"  y="26" text-anchor="middle" font-size="12" font-weight="700" fill="white">Epic EHR</text>
+        <rect x="190" y="6" width="680" height="32" rx="6" fill="#6366f1"/>
+        <text x="530" y="26" text-anchor="middle" font-size="12" font-weight="700" fill="white">CFIP Orchestrator Platform</text>
+        <rect x="880" y="6" width="312" height="32" rx="6" fill="#059669"/>
+        <text x="1036" y="26" text-anchor="middle" font-size="12" font-weight="700" fill="white">External APIs</text>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 1 · EHR Trigger + PLAN (y=50..94)                             -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="8"   y="50" width="170" height="44" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="93"  y="68" text-anchor="middle" font-size="12"  font-weight="700" fill="#1d4ed8">order-select hook</text>
+        <text x="93"  y="82" text-anchor="middle" font-size="10"  font-weight="600" fill="#3b82f6">clinician selects drug</text>
+
+        <line x1="178" y1="72" x2="189" y2="72" stroke="#3b82f6" stroke-width="2" marker-end="url(#cf-arrb)"/>
+
+        <!-- HTTP endpoint badge (shows the actual CDS Hooks URL) -->
+        <rect x="8"  y="98" width="170" height="30" rx="5" fill="#1e3a8a" opacity="0.92"/>
+        <text x="93" y="110" text-anchor="middle" font-size="9" font-weight="600" fill="#93c5fd"  font-family="monospace">POST /cds-services/</text>
+        <text x="93" y="122" text-anchor="middle" font-size="9" font-weight="600" fill="#bfdbfe"  font-family="monospace">cfip-order-intelligence</text>
+
+        <rect x="190" y="50" width="680" height="44" rx="7" fill="#eff6ff" stroke="#60a5fa" stroke-width="1.5"/>
+        <rect x="190" y="50" width="66"  height="22" rx="5" fill="#60a5fa"/>
+        <text x="223" y="65" text-anchor="middle" font-size="10"  font-weight="800" fill="white">① PLAN</text>
+        <text x="530" y="69" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">Classify drug class → select evidence chain</text>
+        <text x="530" y="84" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">GLP-1 Prior Auth · Oncology · PGx Safety · Denial Prevention</text>
+
+        <!-- PLAN ↓ FHIR -->
+        <line x1="530" y1="94" x2="530" y2="106" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#cf-arr)"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 2 · FHIR + Epic FHIR R4 (y=106..150)                         -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="106" width="680" height="44" rx="7" fill="#f0fdf4" stroke="#34d399" stroke-width="1.5"/>
+        <rect x="190" y="106" width="66"  height="22" rx="5" fill="#34d399"/>
+        <text x="223" y="121" text-anchor="middle" font-size="10"  font-weight="800" fill="#064e3b">② FHIR</text>
+        <text x="530" y="125" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">JWT RS384 auth → fetch patient bundle</text>
+        <text x="530" y="140" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">Patient · Medications · Labs · Conditions · Coverage — all in one round-trip</text>
+
+        <line x1="870" y1="128" x2="879" y2="128" stroke="#34d399" stroke-width="1.5" marker-end="url(#cf-arrg)"/>
+        <line x1="877" y1="138" x2="869" y2="138" stroke="#34d399" stroke-width="1"   stroke-dasharray="3,2" marker-end="url(#cf-arrg)"/>
+
+        <rect x="880" y="106" width="312" height="44" rx="7" fill="#dcfce7" stroke="#34d399" stroke-width="1.5"/>
+        <text x="1036" y="126" text-anchor="middle" font-size="12"  font-weight="700" fill="#065f46">Epic FHIR R4</text>
+        <text x="1036" y="141" text-anchor="middle" font-size="10"  font-weight="600" fill="#047857">fhir.epic.com/R4 — returns FHIR Bundle</text>
+
+        <!-- FHIR ↓ EXECUTE -->
+        <line x1="530" y1="150" x2="530" y2="162" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#cf-arr)"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 3 · EXECUTE — clinical rules (y=162..232, h=70)               -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="162" width="680" height="70" rx="7" fill="#faf5ff" stroke="#a78bfa" stroke-width="1.5"/>
+        <rect x="190" y="162" width="80"  height="22" rx="5" fill="#a78bfa"/>
+        <text x="230" y="177" text-anchor="middle" font-size="10"  font-weight="800" fill="white">③ EXECUTE</text>
+        <text x="530" y="180" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">Clinical rules engine — deterministic, no LLM in safety decisions</text>
+        <!-- 4 rule tags spread across the 680px CFIP box -->
+        <rect x="200" y="190" width="152" height="18" rx="9" fill="#a78bfa1a" stroke="#a78bfa55"/>
+        <text x="276" y="203" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6d28d9">CPIC drug-gene rules</text>
+        <rect x="360" y="190" width="152" height="18" rx="9" fill="#a78bfa1a" stroke="#a78bfa55"/>
+        <text x="436" y="203" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6d28d9">NCCN pathway validation</text>
+        <rect x="520" y="190" width="152" height="18" rx="9" fill="#a78bfa1a" stroke="#a78bfa55"/>
+        <text x="596" y="203" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6d28d9">denial risk scoring</text>
+        <rect x="680" y="190" width="182" height="18" rx="9" fill="#a78bfa1a" stroke="#a78bfa55"/>
+        <text x="771" y="203" text-anchor="middle" font-size="9.5" font-weight="700" fill="#6d28d9">PA bundle assembly</text>
+
+        <!-- EXECUTE ↓ AI Narrative -->
+        <line x1="530" y1="232" x2="530" y2="244" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#cf-arr)"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 4 · AI Narrative + OpenAI ① (y=244..288)                     -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="244" width="680" height="44" rx="7" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5"/>
+        <rect x="190" y="244" width="52"  height="22" rx="5" fill="#fbbf24"/>
+        <text x="216" y="259" text-anchor="middle" font-size="10"  font-weight="800" fill="#78350f">④ AI</text>
+        <text x="530" y="263" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">GPT-4o-mini — synthesise clinical narrative from evidence</text>
+        <text x="530" y="278" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">Evidence summary · risk factors · recommended actions — in plain clinical language</text>
+
+        <line x1="870" y1="266" x2="879" y2="266" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#cf-arry)"/>
+        <line x1="877" y1="276" x2="869" y2="276" stroke="#fbbf24" stroke-width="1"   stroke-dasharray="3,2" marker-end="url(#cf-arry)"/>
+
+        <rect x="880" y="244" width="312" height="44" rx="7" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="1036" y="264" text-anchor="middle" font-size="12"  font-weight="700" fill="#92400e">OpenAI API</text>
+        <text x="1036" y="279" text-anchor="middle" font-size="10"  font-weight="600" fill="#b45309">GPT-4o-mini → clinical narrative text</text>
+
+        <!-- AI Narrative ↓ VERIFY -->
+        <line x1="530" y1="288" x2="530" y2="300" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#cf-arr)"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 5 · VERIFY (y=300..340)                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="300" width="680" height="40" rx="7" fill="#f0fdfa" stroke="#2dd4bf" stroke-width="1.5"/>
+        <rect x="190" y="300" width="74"  height="22" rx="5" fill="#2dd4bf"/>
+        <text x="227" y="315" text-anchor="middle" font-size="10"  font-weight="800" fill="#134e4a">⑤ VERIFY</text>
+        <text x="530" y="315" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">Check evidence completeness</text>
+        <text x="530" y="330" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">Flag FHIR gaps · log data sources · detect missing coverage information</text>
+
+        <!-- Dashed connector: same endpoint for both AI calls -->
+        <line x1="1036" y1="288" x2="1036" y2="400" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <text x="1058" y="348" font-size="9.5" font-weight="600" fill="#d97706" font-style="italic">same API</text>
+
+        <!-- VERIFY ↓ COMPOSE -->
+        <line x1="530" y1="340" x2="530" y2="352" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#cf-arr)"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 6 · COMPOSE (y=352..392)                                      -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="352" width="680" height="40" rx="7" fill="#fdf2f8" stroke="#f9a8d4" stroke-width="1.5"/>
+        <rect x="190" y="352" width="84"  height="22" rx="5" fill="#f9a8d4"/>
+        <text x="232" y="367" text-anchor="middle" font-size="10"  font-weight="800" fill="#831843">⑥ COMPOSE</text>
+        <text x="530" y="367" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">Assemble CDS cards from accumulated evidence</text>
+        <text x="530" y="382" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">Denial risk · PGx safety alert · NCCN validation · PA bundle · appeal link</text>
+
+        <!-- COMPOSE ──(conditional dashed)──▶ AI Appeal -->
+        <line x1="530" y1="392" x2="530" y2="402" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#cf-arry)"/>
+        <text x="538" y="400" font-size="9.5" font-weight="600" fill="#b45309" font-style="italic">if denial risk &lt;50%</text>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- ROW 7 · AI Appeal (conditional) + OpenAI ② (y=402..446)          -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <rect x="190" y="402" width="680" height="44" rx="7" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="7,3"/>
+        <rect x="190" y="402" width="52"  height="22" rx="5" fill="#fbbf24" opacity="0.75"/>
+        <text x="216" y="417" text-anchor="middle" font-size="10"  font-weight="800" fill="#78350f">⑦ AI</text>
+        <text x="280" y="409" font-size="10" font-weight="600" fill="#b45309" font-style="italic">(conditional)</text>
+        <text x="530" y="421" text-anchor="middle" font-size="12"  font-weight="700" fill="#1e293b">GPT-4o-mini — draft PA appeal letter for Medical Director</text>
+        <text x="530" y="436" text-anchor="middle" font-size="10"  font-weight="600" fill="#475569">Cites met clinical criteria · references payer policy · proposes resolution</text>
+
+        <line x1="870" y1="424" x2="879" y2="424" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#cf-arry)"/>
+        <line x1="877" y1="434" x2="869" y2="434" stroke="#fbbf24" stroke-width="1"   stroke-dasharray="3,2" marker-end="url(#cf-arry)"/>
+
+        <rect x="880" y="402" width="312" height="44" rx="7" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="7,3"/>
+        <text x="1036" y="422" text-anchor="middle" font-size="12"  font-weight="700" fill="#92400e">OpenAI API</text>
+        <text x="1036" y="437" text-anchor="middle" font-size="10"  font-weight="600" fill="#b45309">GPT-4o-mini → appeal letter draft</text>
+
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <!-- CDS Response path: COMPOSE ← left → EHR lane → down → EHR Output -->
+        <!-- ═══════════════════════════════════════════════════════════════════ -->
+        <polyline points="190,372 93,372 93,456" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#cf-arrb)"/>
+        <text x="140" y="367" text-anchor="middle" font-size="9.5" font-weight="600" fill="#3b82f6">← CDS response</text>
+        <text x="72"  y="414" text-anchor="middle" font-size="9.5" font-weight="600" fill="#3b82f6" transform="rotate(-90,72,414)">CDS Response</text>
+
+        <!-- EHR Output box (CDS Cards) -->
+        <rect x="8"   y="458" width="170" height="41" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+        <text x="93"  y="476" text-anchor="middle" font-size="12"  font-weight="700" fill="#1d4ed8">⑧ CDS Cards</text>
+        <text x="93"  y="491" text-anchor="middle" font-size="10"  font-weight="600" fill="#3b82f6">rendered at point of care</text>
+      </svg>
+
+      <!-- Legend below SVG — HTML, fully readable at any scale -->
+      <div style="display:flex;flex-wrap:wrap;gap:0.6rem 1.2rem;padding:0.55rem 1rem;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:7px;margin-top:0.5rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#60a5fa;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">PLAN — drug classification</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#34d399;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">FHIR — real patient data</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#a78bfa;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">EXECUTE — deterministic rules</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#fbbf24;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">AI — GPT-4o-mini inference</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#2dd4bf;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">VERIFY — completeness check</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:#f9a8d4;flex-shrink:0;"></span><span style="font-size:0.8rem;font-weight:700;color:#334155;">COMPOSE — card assembly</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><svg width="24" height="5" style="flex-shrink:0;"><line x1="0" y1="2.5" x2="24" y2="2.5" stroke="#94a3b8" stroke-width="2"/></svg><span style="font-size:0.8rem;font-weight:700;color:#334155;">solid — always runs</span></div>
+        <div style="display:flex;align-items:center;gap:0.4rem;"><svg width="24" height="5" style="flex-shrink:0;"><line x1="0" y1="2.5" x2="24" y2="2.5" stroke="#fbbf24" stroke-width="2" stroke-dasharray="4,2"/></svg><span style="font-size:0.8rem;font-weight:700;color:#334155;">dashed — conditional</span></div>
+      </div>
+    </div>`;
+
+    // ── Tab 3: Epic production workflow — clean HTML vertical flow ───────────
+    const tab3Html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+      <style>
+        @keyframes epFlowV { from{background-position:0 0} to{background-position:0 20px} }
+        @keyframes epBob   { 0%,100%{transform:translateY(0)} 60%{transform:translateY(4px)} }
+      </style>
+
+      <!-- ONE-TIME SETUP banner -->
+      <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:7px;padding:0.5rem 0.9rem;margin-bottom:0.75rem;display:flex;align-items:flex-start;gap:0.75rem;">
+        <span style="font-size:0.8rem;font-weight:800;color:#92400e;white-space:nowrap;flex-shrink:0;">⚙ ONE-TIME SETUP</span>
+        <span style="font-size:0.79rem;font-weight:600;color:#78350f;">Register CFIP with <strong>Epic App Orchard</strong>: discovery URL · SMART credentials · JWK endpoint (JWT RS384) · hook type: <strong>order-select</strong> · prefetch template. Done once per environment.</span>
+      </div>
+
+      <!-- Runtime label -->
+      <div style="text-align:center;font-size:0.74rem;font-weight:700;color:#64748b;letter-spacing:0.05em;margin-bottom:0.6rem;">── RUNTIME FLOW — fires automatically on every drug order selection ──</div>
+
+      <!-- Step 1: Clinician -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.85rem;background:#eff6ff;border:2px solid #3b82f6;border-radius:8px;">
+        <span style="background:#2563eb;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</span>
+        <div>
+          <div style="font-size:0.87rem;font-weight:700;color:#1e40af;">Clinician selects a drug order in Epic Hyperspace</div>
+          <div style="font-size:0.77rem;font-weight:600;color:#3b82f6;margin-top:0.1rem;">Epic CDS Hooks engine activates internally — no extra action needed from the clinician</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin:0.1rem 0;">
+        <div style="width:3px;height:24px;border-radius:2px;background:repeating-linear-gradient(to bottom,#1e40af 0,#1e40af 7px,transparent 7px,transparent 14px);background-size:100% 14px;animation:epFlowV 0.45s linear infinite;"></div>
+        <span style="color:#1e40af;font-size:1rem;font-weight:900;line-height:1;animation:epBob 0.9s ease-in-out infinite;">▼</span>
+      </div>
+
+      <!-- Step 2: Epic fires hook -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.85rem;background:#dbeafe;border:2px solid #1e40af;border-radius:8px;">
+        <span style="background:#1e40af;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</span>
+        <div>
+          <div style="font-size:0.87rem;font-weight:700;color:#1e3a8a;">Epic fires the CDS Hook — <em>server-to-server, no browser involved</em></div>
+          <div style="margin-top:0.28rem;">
+            <code style="background:#1e3a8a;color:#93c5fd;font-size:0.78rem;font-weight:700;padding:0.18rem 0.65rem;border-radius:4px;">POST /cds-services/cfip-order-intelligence</code>
+          </div>
+          <div style="font-size:0.77rem;font-weight:600;color:#2563eb;margin-top:0.2rem;">CDS Hooks 1.0 · includes patient context + prefetch FHIR bundle</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin:0.1rem 0;">
+        <div style="width:3px;height:24px;border-radius:2px;background:repeating-linear-gradient(to bottom,#6366f1 0,#6366f1 7px,transparent 7px,transparent 14px);background-size:100% 14px;animation:epFlowV 0.45s linear infinite;"></div>
+        <span style="color:#6366f1;font-size:1rem;font-weight:900;line-height:1;animation:epBob 0.9s ease-in-out infinite;">▼</span>
+      </div>
+
+      <!-- Step 3: CFIP Backend -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.6rem 0.85rem;background:#eef2ff;border:2px solid #6366f1;border-radius:8px;">
+        <span style="background:#6366f1;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</span>
+        <div style="flex:1;">
+          <div style="font-size:0.87rem;font-weight:700;color:#4338ca;margin-bottom:0.4rem;">CFIP Backend — Orchestrator processes the request</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.25rem 1rem;">
+            <div style="font-size:0.78rem;font-weight:700;color:#4338ca;"><span style="color:#60a5fa;">PLAN</span> — classify drug, select evidence chain</div>
+            <div style="font-size:0.78rem;font-weight:700;color:#4338ca;"><span style="color:#34d399;">FHIR</span> — JWT RS384 → fhir.epic.com/R4</div>
+            <div style="font-size:0.78rem;font-weight:700;color:#4338ca;"><span style="color:#a78bfa;">EXECUTE</span> — CPIC · NCCN · denial score · PA bundle</div>
+            <div style="font-size:0.78rem;font-weight:700;color:#4338ca;"><span style="color:#fbbf24;">AI</span> — GPT-4o-mini narrative + appeal if risk &lt;50%</div>
+          </div>
+          <div style="font-size:0.78rem;font-weight:700;color:#4338ca;margin-top:0.25rem;"><span style="color:#f9a8d4;">COMPOSE</span> — assemble final CDS cards from all evidence</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin:0.1rem 0;">
+        <div style="width:3px;height:24px;border-radius:2px;background:repeating-linear-gradient(to bottom,#1e40af 0,#1e40af 7px,transparent 7px,transparent 14px);background-size:100% 14px;animation:epFlowV 0.45s linear infinite;"></div>
+        <span style="color:#1e40af;font-size:1rem;font-weight:900;line-height:1;animation:epBob 0.9s ease-in-out infinite;">▼</span>
+      </div>
+
+      <!-- Step 4: CDS Response -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.85rem;background:#dbeafe;border:2px solid #1e40af;border-radius:8px;">
+        <span style="background:#1e40af;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">4</span>
+        <div>
+          <div style="font-size:0.87rem;font-weight:700;color:#1e3a8a;">CFIP returns HTTP 200 · CdsResponse { cards: [...] }</div>
+          <div style="font-size:0.77rem;font-weight:600;color:#2563eb;margin-top:0.1rem;">Cards contain: denial risk score · PGx alert · NCCN validation · PA bundle · appeal draft link</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin:0.1rem 0;">
+        <div style="width:3px;height:24px;border-radius:2px;background:repeating-linear-gradient(to bottom,#1e40af 0,#1e40af 7px,transparent 7px,transparent 14px);background-size:100% 14px;animation:epFlowV 0.45s linear infinite;"></div>
+        <span style="color:#1e40af;font-size:1rem;font-weight:900;line-height:1;animation:epBob 0.9s ease-in-out infinite;">▼</span>
+      </div>
+
+      <!-- Step 5: Epic renders cards -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.85rem;background:#dbeafe;border:2px solid #2563eb;border-radius:8px;">
+        <span style="background:#2563eb;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">5</span>
+        <div>
+          <div style="font-size:0.87rem;font-weight:700;color:#1e40af;">Epic renders CDS cards natively inside Hyperspace</div>
+          <div style="font-size:0.77rem;font-weight:600;color:#2563eb;margin-top:0.1rem;">No screen switch · no portal login · clinician never leaves their workflow · appears at point of prescribing</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;flex-direction:column;align-items:center;margin:0.1rem 0;">
+        <div style="width:3px;height:24px;border-radius:2px;background:repeating-linear-gradient(to bottom,#2563eb 0,#2563eb 7px,transparent 7px,transparent 14px);background-size:100% 14px;animation:epFlowV 0.45s linear infinite;"></div>
+        <span style="color:#2563eb;font-size:1rem;font-weight:900;line-height:1;animation:epBob 0.9s ease-in-out infinite;">▼</span>
+      </div>
+
+      <!-- Step 6: Clinician acts -->
+      <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.85rem;background:#eff6ff;border:2px solid #3b82f6;border-radius:8px;">
+        <span style="background:#3b82f6;color:white;font-size:0.75rem;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">6</span>
+        <div>
+          <div style="font-size:0.87rem;font-weight:700;color:#1e40af;">Clinician acts on the cards</div>
+          <div style="font-size:0.77rem;font-weight:600;color:#3b82f6;margin-top:0.1rem;">Accept suggestion (updates order in Epic) · View appeal draft · Dismiss — all actions execute directly inside Epic</div>
+        </div>
+      </div>
+
+      <!-- DEV ONLY banner -->
+      <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:7px;padding:0.5rem 0.9rem;margin-top:0.75rem;">
+        <div style="font-size:0.82rem;font-weight:800;color:#991b1b;">⚠ DEV ONLY — This CDS Hooks Harness does NOT appear in the production flow.</div>
+        <div style="font-size:0.77rem;font-weight:600;color:#b91c1c;margin-top:0.2rem;">In production, Epic Hyperspace builds the HookRequest, calls CFIP directly (server-to-server), and renders cards natively. The harness simulates Epic during local development and demos only. CFIP Backend is present in both environments.</div>
+      </div>
+    </div>`;
+
+    // Tab switching — must be on window so modal innerHTML can call it
+    window.cfipTab = function(n) {
+      document.getElementById("cfip-t1").style.display = n === 1 ? "block" : "none";
+      document.getElementById("cfip-t2").style.display = n === 2 ? "block" : "none";
+      document.getElementById("cfip-t3").style.display = n === 3 ? "block" : "none";
+      [1,2,3].forEach(i => {
+        const btn = document.getElementById("cfip-tb" + i);
+        btn.style.background = n === i ? "#6366f1" : "#e2e8f0";
+        btn.style.color      = n === i ? "white"   : "#64748b";
+      });
+    };
+
+    const html = `
+    <div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;border-bottom:2px solid #e2e8f0;padding-bottom:0.6rem;">
+        <button id="cfip-tb1" onclick="cfipTab(1)"
+          style="padding:0.4rem 1.1rem;border:none;border-radius:6px;cursor:pointer;
+                 font-size:0.8rem;font-weight:600;background:#6366f1;color:white;">
+          ① Overview
+        </button>
+        <button id="cfip-tb2" onclick="cfipTab(2)"
+          style="padding:0.4rem 1.1rem;border:none;border-radius:6px;cursor:pointer;
+                 font-size:0.8rem;font-weight:600;background:#e2e8f0;color:#64748b;">
+          ② Visual Flow
+        </button>
+        <button id="cfip-tb3" onclick="cfipTab(3)"
+          style="padding:0.4rem 1.1rem;border:none;border-radius:6px;cursor:pointer;
+                 font-size:0.8rem;font-weight:600;background:#e2e8f0;color:#64748b;">
+          ③ Epic Production Flow
+        </button>
+      </div>
+      <div id="cfip-t1">${tab1Html}</div>
+      <div id="cfip-t2" style="display:none;">${tab2Html}</div>
+      <div id="cfip-t3" style="display:none;">${tab3Html}</div>
+    </div>`;
+
+    openModal("CFIP End-to-End Flow", html, false, true);
+  }
+
+  // =============================================================================
+  // SUGGESTION BUTTONS — each label maps to a context-appropriate message
+  // =============================================================================
+  function handleSuggestion(event, label) {
+    event.preventDefault();
+    const l = label.toLowerCase();
+
+    // Drug alternative (PGx) — "Switch to Prasugrel / Ticagrelor"
+    if (l.startsWith("switch to")) {
+      const drug = label.replace(/^switch to /i, "").trim();
+      openModal("Switch Medication Order", `
+        <p style="color:#555;font-size:0.875rem;line-height:1.7;">
+          In a live Epic deployment, selecting <strong>${drug}</strong> would update the draft
+          medication order in the EHR before the clinician signs it.<br><br>
+          CFIP has already verified that <strong>${drug}</strong> is the CPIC-recommended alternative
+          for this patient's CYP2C19 genotype — no dose adjustment is required.
+        </p>`, false);
+      return;
     }
 
-    document.getElementById("fire-btn").addEventListener("click", fireHook);
+    // Lab order (PGx panel) — "Order CYP2C19 PGx Panel"
+    if (l.includes("pgx panel") || l.includes("order") && l.includes("panel")) {
+      openModal("Order Genomic Panel", `
+        <p style="color:#555;font-size:0.875rem;line-height:1.7;">
+          In a live Epic deployment, this would place a lab order for the PGx genotyping panel
+          directly from the CDS card.<br><br>
+          Results typically return within 24–72 hours. CFIP will re-evaluate the drug order
+          automatically when genomic results are available.
+        </p>`, false);
+      return;
+    }
+
+    // PA submission — "Submit PA Now"
+    if (l.includes("submit pa") || l === "submit pa now") {
+      openModal("Submit Prior Authorization", `
+        <p style="color:#555;font-size:0.875rem;line-height:1.7;">
+          In a live Epic deployment, this would transmit the assembled PA bundle electronically
+          to the payer via the X12 278 transaction.<br><br>
+          CFIP has pre-populated all required fields based on the patient's clinical record.
+          Estimated turnaround: 24–72 hours.
+        </p>`, false);
+      return;
+    }
+
+    // Review / documentation gaps — several label variants
+    if (l.includes("review") || l.includes("address") || l.includes("documentation")) {
+      openModal("Review Documentation", `
+        <p style="color:#555;font-size:0.875rem;line-height:1.7;">
+          One or more required documents are missing or need review before the PA can be submitted.<br><br>
+          The card detail above lists the specific gaps identified by CFIP. Resolving these
+          before submission significantly improves approval probability.
+        </p>`, false);
+      return;
+    }
+
+    // Fallback for any unrecognised label
+    openModal(label, `
+      <p style="color:#555;font-size:0.875rem;line-height:1.7;">
+        In a live Epic deployment this action would be executed within the EHR workflow.
+      </p>`, false);
+  }
+
+  // =============================================================================
+  // MODAL — handles "View Appeal Draft" and "View Full Analysis" links
+  // =============================================================================
+  async function handleLink(event, url, label) {
+    event.preventDefault();
+
+    // Agent Reasoning Trace — covers /analysis, /pgx, /oncology placeholder URLs
+    if (url.includes("placeholder.cfip.app")) {
+      const trace  = _traceStore["last"] || _traceStore[Object.keys(_traceStore)[0]] || [];
+      const colors = {
+        PLAN: "#60a5fa", FHIR: "#34d399", STEP: "#a78bfa",
+        SKIP: "#94a3b8", ERR: "#f87171", GAP: "#fb923c",
+        VERIFY: "#2dd4bf", COMPOSE: "#f9a8d4", AI: "#fbbf24",
+      };
+      const legend = `
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-bottom:0.9rem;font-size:0.72rem;font-family:sans-serif;">
+          ${Object.entries(colors).map(([k,v]) =>
+            `<span style="color:${v};font-weight:700;">${k}</span><span style="color:#94a3b8;"> ${
+              ({PLAN:"orchestrator plans the chain",FHIR:"Epic FHIR API call",
+                STEP:"rule-based processing",AI:"LLM / AI model call",
+                VERIFY:"evidence gap check",COMPOSE:"card assembly",
+                SKIP:"step bypassed",ERR:"error",GAP:"missing evidence"})[k]||""
+            }</span>`
+          ).join(" &nbsp;·&nbsp; ")}
+        </div>`;
+      const traceHtml = trace.length === 0
+        ? `<p style="color:#888;font-size:0.85rem;">Run a scenario first to see the AI agent reasoning trace.</p>`
+        : legend + `<div style="font-family:'Courier New',monospace;font-size:0.78rem;line-height:1.8;background:#0f172a;color:#e2e8f0;padding:1.1rem 1.25rem;border-radius:8px;overflow-x:auto;">${
+            trace.map(line => {
+              // Extract first word only (before any space or colon) — handles
+              // "PLAN: ...", "STEP fetch_labs: ...", "AI generate_narrative: ..."
+              const phase = line.split(/[\s:]/)[0].trim();
+              const col = colors[phase] || "#e2e8f0";
+              const badge = `<span style="color:${col};font-weight:700;min-width:3.5rem;display:inline-block;">${phase}</span>`;
+              // Strip the phase word plus any leading spaces/colons from the rest
+              const rest = line.slice(phase.length).replace(/^[\s:]+/, "");
+              return `<div>${badge} <span style="color:#cbd5e1;">${rest}</span></div>`;
+            }).join("")
+          }</div>`;
+      openModal("AI Agent Reasoning Trace", traceHtml, false);
+      return;
+    }
+
+    // Appeal draft — fetch from CFIP and display
+    if (url.includes("/cds-services/appeals/")) {
+      openModal(label, `<p style="color:#888; font-size:0.82rem;">Loading appeal draft...</p>`, true);
+      try {
+        // Use relative path to avoid port mismatch
+        const path = new URL(url).pathname;
+        const res  = await fetch(path);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = await res.text();
+        document.getElementById("modal-body").innerHTML =
+          `<pre>${text}</pre>`;
+      } catch (err) {
+        document.getElementById("modal-body").innerHTML =
+          `<p style="color:#991b1b; font-size:0.84rem;">Could not load appeal draft: ${err}</p>`;
+      }
+      return;
+    }
+
+    // Fallback — open in new tab
+    window.open(url, "_blank");
+  }
+
+  function openModal(title, bodyHtml, showCopy, wideMode) {
+    document.getElementById("modal-title").textContent = title;
+    document.getElementById("modal-body").innerHTML = bodyHtml;
+    document.getElementById("modal-copy-btn").style.display = showCopy ? "inline-block" : "none";
+    const box = document.querySelector(".modal-box");
+    if (wideMode) { box.style.maxWidth = "96vw"; box.style.maxHeight = "96vh"; }
+    document.getElementById("modal-overlay").classList.add("open");
+  }
+
+  function closeModal(event) {
+    if (event.target === document.getElementById("modal-overlay")) closeModalDirect();
+  }
+
+  function closeModalDirect() {
+    document.getElementById("modal-overlay").classList.remove("open");
+    const box = document.querySelector(".modal-box");
+    box.style.maxWidth = "";
+    box.style.maxHeight = "";
+  }
+
+  function copyModalText() {
+    const text = document.getElementById("modal-body").innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById("modal-copy-btn");
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = "Copy to Clipboard", 2000);
+    });
+  }
+
+  // Pre-select Scenario A on load
+  selectScenario("A");
   </script>
 </body>
 </html>

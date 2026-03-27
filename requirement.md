@@ -131,29 +131,62 @@ A static rule engine cannot handle this combinatorial explosion. The agent dynam
 
  ## 7. Current Phase
 
-  **Phase:** 2 — CDS Hooks Service
-  **Status:** COMPLETE ✓
+   ## 7. Current Phase
 
-  **Verified working:**
-  - GET /cds-services returns valid discovery JSON (order-select, prefetch templates) ✓
-  - POST /cds-services/cfip-order-intelligence returns stub card ✓
-  - Terminal harness: python tools/cds_hooks_harness/harness.py fires Scenario A ✓
-  - Browser UI: http://localhost:8000/harness/ renders INFO card ✓
-  - 18/18 tests passing ✓
+    Phase: 5 — Agentic Orchestrator + Demo Harness Polish        Status: COMPLETE ✓
 
-  **All Phase 2 files:**
-  - app/models/cds_hooks.py — CDS Hooks 2.0 Pydantic models
-  - app/api/__init__.py, app/api/cds_hooks.py — discovery + hook handler
-  - app/main.py — updated with router + static mount
-  - tools/cds_hooks_harness/scenarios.py, harness.py — terminal test harness
-  - tools/cds_hooks_harness/static/index.html — browser UI
-  - tests/test_cds_hooks.py — 18 spec-compliance tests
+    Verified working:
+    - All 4 scenarios: A (Ozempic/GLP-1), B (Clopidogrel/PGx), C (Keytruda/Oncology), D (MRI/Denial) ✓
+    - Agentic orchestrator replaces if/elif router — plan-execute-verify-compose loop ✓
+    - Evidence chain runs per drug class: glp1, pgx_sensitive, oncology, standard ✓
+    - OpenAI gpt-4o-mini generates clinical narratives (5s timeout) + appeal letters (15s timeout) ✓
+    - Template fallback when OpenAI unavailable ✓
+    - NCCN pathway validator: pembrolizumab + nivolumab + NSCLC (Category 1) ✓
+    - Brand-to-generic substring matching (handles "Keytruda (pembrolizumab) 200mg IV…") ✓
+    - ServiceRequest extraction for procedure orders (MRI, CPT codes) ✓
+    - Appeal letters generated, stored in memory, retrieved via GET /cds-services/appeals/{id} ✓
+    - 198 tests passing ✓
+    - Server runs on port 5000 (matches zrok reserved share pcmsmartbackendapp1 → localhost:5000) ✓
+    - zrok tunnel verified end-to-end: https://pcmsmartbackendapp1.share.zrok.io/cds-services returns 200 ✓
 
-  **Next phase:** Phase 3 — Clinical-Financial Bridge
-  - Denial prediction for synthetic order with 4+ evidence factors
-  - Real FHIR data: Coverage, ExplanationOfBenefit, Observation (A1C, BMI)
-  - Denial scorer replacing stub card values
-  - SQLite payer rules cache
+    Demo harness fully redesigned (tools/cds_hooks_harness/static/index.html):
+    - Epic-like header (CFIP v1.0, bold branding)
+    - Standards strip: HL7 CDS Hooks 1.0 · FHIR R4 · SMART Backend Services · GPT-4o-mini
+    - 4 visual scenario cards replace dropdown (brand name + plain English description)
+    - Before/After workflow comparison per scenario (illustrative)
+    - Patient context panel: avatar, name, drug, payer, provider, encounter
+    - Evidence chain animation with named steps
+    - Appeal draft and Full Analysis open as modals (not new tabs)
+    - "Analyze Order" button (not "Fire") with CDS Hooks context label
+    - Raw JSON collapsible panel
+
+    Key decisions made:
+    - APP_PORT changed to 5000 in .env — matches existing zrok share (no new Epic registration needed)
+    - Appeal URL uses get_settings().app_port dynamically (no hardcoded port)
+    - CDS Hooks public sandbox (fhir.epic.com) does NOT support self-service CDS Hook registration
+      — real hospitals configure the endpoint on their Epic instance via system admin
+    - Browser harness is the correct demo vehicle (prefetch + synthetic overlay, no Epic handshake needed)
+    - Phase 6 goal confirmed: wire real SMART Backend Services JWT auth + Epic FHIR API calls
+
+    All Phase 5 files:
+    - app/agents/orchestrator.py (plan-execute-verify-compose, AgentResult, evidence chain log)
+    - app/agents/denial_prediction.py (ServiceRequest extraction added)
+    - app/intelligence/openai_client.py (separate appeal timeout 15s, oncology prompt fix)
+    - app/intelligence/card_composer.py (compose_from_agent_result, word-boundary truncation)
+    - app/intelligence/appeal_generator.py (AppealGenerator, should_generate_appeal)
+    - app/rules/nccn_validator.py (validate_nccn_pathway, brand substring lookup)
+    - app/api/cds_hooks.py (orchestrator wired, appeal store, GET /cds-services/appeals/{id})
+    - app/config.py (APP_PORT added)
+    - tools/cds_hooks_harness/static/index.html (full harness redesign)
+    - tests/test_orchestrator.py (47 new tests, 198 total)
+
+    Next phase: Phase 6 — Real SMART on FHIR Backend Integration
+    - D1: FHIR Client Service — JWT → access token → fetch Patient, MedicationRequest,
+          Observation, Condition, Coverage from Epic FHIR API
+    - D2: Orchestrator update — FHIR first, synthetic overlay fills gaps
+    - D3: JWK Set endpoint — GET /.well-known/jwks.json (currently 404 in Epic app registration)
+    - D4: Harness — show "Authenticating with Epic… ✓" and "Fetching FHIR record… ✓" in animation
+    - D5: Data source tagging — each card indicates real FHIR vs synthetic overlay
 
 ---
 
@@ -250,3 +283,8 @@ OPENAI_MODEL=gpt-4o-mini
 | 2 | 2026-03-24 | Finalized tech stack (Python/FastAPI), settled C# vs Python debate, designed three UI surfaces, discussed working style, created mutual understanding contract, verified Epic sandbox config, decided OpenAI over Claude API |
 | 3 | 2026-03-24 | Phase 1 complete: Project scaffold, Epic OAuth (RS384 JWT), FHIR Patient + Coverage read, verify_epic.py working. No Coverage data in sandbox — handled gracefully. |
 | 4 | 2026-03-24 | Phase 1 + Phase 2 complete. Scaffold, Epic auth, FHIR reads, CDS Hooks service, 18 tests passing. |  
+| 5 | 2026-03-26 | Phase 3 complete: SQLite with payer rules, drug classifier, denial risk scorer (weighted 5-factor model), clinical-financial bridge pipeline, synthetic overlay (toggleable), template-based card composer, real denial scoring replacing stub cards. |
+ | 6 | 2026-03-26 | Phase 4 complete: CPIC PGx engine, clopidogrel safety alert, specialty PA builder, drug-class routing, synthetic genomic overlay, 73 new tests, 151 total passing. Harness  
+  updated with Scenario B and Run All button. |
+| 7 | 2026-03-27 | Phase 5 complete: Agentic orchestrator, all 4 scenarios working, OpenAI narratives + appeal letters, 198 tests. Full harness redesign: Epic-like UI, Before/After story,    
+  modal popups, standards strip. zrok tunnel verified on port 5000. Phase 6 plan confirmed: real Epic FHIR calls via SMART Backend Services. |

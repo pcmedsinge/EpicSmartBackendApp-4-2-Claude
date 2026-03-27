@@ -7,7 +7,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.api.cds_hooks import router as cds_router
+from app.api.jwks import router as jwks_router
 from app.config import get_settings
+from app.data.db import init_db
+from app.data.seed_cpic import seed as seed_cpic
+from app.data.seed_payer_rules import seed as seed_payer_rules
 
 # ---------------------------------------------------------------------------
 # Module-level logger
@@ -37,6 +41,13 @@ async def lifespan(app: FastAPI):
     # --- Startup ---
     settings = get_settings()
     logger.info("CFIP starting up")
+
+    # Ensure DB tables exist and seed reference data.
+    # init_db() is idempotent (IF NOT EXISTS). Seed functions skip rows already present.
+    init_db()
+    seed_payer_rules()
+    seed_cpic()
+    logger.info("Database initialised and seeded")
     logger.info("Epic FHIR base URL : %s", settings.epic_fhir_base_url)
     logger.info("Epic client ID     : %s", settings.epic_client_id)
     logger.info("zrok public URL    : %s", settings.zrok_public_url)
@@ -75,6 +86,7 @@ app = FastAPI(
 #             with a controller registration.
 # ---------------------------------------------------------------------------
 app.include_router(cds_router)
+app.include_router(jwks_router)  # /.well-known/jwks.json — no prefix, path is literal
 
 # ---------------------------------------------------------------------------
 # Static files — serves the CDS Hooks test harness browser UI.

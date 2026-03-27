@@ -4,16 +4,23 @@ CDS Hooks API endpoints.
 Endpoints:
   GET  /cds-services                              — discovery
   POST /cds-services/cfip-order-intelligence      — order-select hook handler
+  GET  /cds-services/appeals/{appeal_id}          — retrieve a generated appeal draft
 
-Phase 2 note: the hook handler returns a STUB card with hardcoded content.
-Real denial scoring, PGx, and cost intelligence are added in Phases 3-5.
+Phase 5: if/else drug-class router replaced by the agentic Orchestrator.
+  - Orchestrator.process() selects the evidence chain, runs each step,
+    generates an LLM narrative, and composes CDS cards for all 4 scenarios.
+  - AppealGenerator produces a PA appeal draft for high-denial-risk orders.
+  - Appeal letters are stored in memory (keyed by UUID) and linked from the card.
 """
 
 import logging
+import uuid
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import PlainTextResponse
 
-from app.fhir.client import FhirClient
+from app.agents.orchestrator import Orchestrator
+from app.intelligence.appeal_generator import AppealGenerator, should_generate_appeal
 from app.models.cds_hooks import (
     Card,
     CdsDiscoveryResponse,
@@ -22,8 +29,9 @@ from app.models.cds_hooks import (
     CdsSource,
     HookRequest,
     Link,
-    Suggestion,
 )
+from app.config import get_settings
+from app.models.domain import AppealLetter
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +70,14 @@ CFIP_SOURCE = CdsSource(
     url="http://localhost:8000",
 )
 
+# ---------------------------------------------------------------------------
+# In-memory appeal store — keyed by UUID string.
+# Phase 5: ephemeral (reset on server restart).
+# Phase 6: replaced by persistent storage / SMART app delivery.
+# C# analogy: a ConcurrentDictionary<string, AppealLetter> scoped to the host.
+# ---------------------------------------------------------------------------
+_APPEAL_STORE: dict[str, AppealLetter] = {}
+
 
 # ---------------------------------------------------------------------------
 # D2: Discovery endpoint
@@ -76,6 +92,25 @@ async def discover() -> CdsDiscoveryResponse:
     per CDS Hooks spec).
     """
     return CdsDiscoveryResponse(services=[CFIP_SERVICE])
+
+
+# ---------------------------------------------------------------------------
+# Appeal retrieval endpoint — served from the in-memory store
+# ---------------------------------------------------------------------------
+@router.get("/appeals/{appeal_id}", response_class=PlainTextResponse)
+async def get_appeal(appeal_id: str) -> str:
+    """
+    Return the text of a previously generated appeal letter draft.
+
+    Called when the clinician clicks "View Appeal Draft" on the CDS card.
+    Returns plain text so the browser can display or print the letter.
+
+    Phase 6: this endpoint will be replaced by the SMART Companion App.
+    """
+    letter = _APPEAL_STORE.get(appeal_id)
+    if letter is None:
+        raise HTTPException(status_code=404, detail="Appeal letter not found")
+    return letter.content
 
 
 # ---------------------------------------------------------------------------
@@ -110,134 +145,120 @@ async def handle_hook(service_id: str, hook_request: HookRequest) -> CdsResponse
     return CdsResponse(cards=[])
 
 
+# ---------------------------------------------------------------------------
+# Phase 5 orchestrator handler
+# ---------------------------------------------------------------------------
+
 async def _handle_order_intelligence(request: HookRequest) -> CdsResponse:
     """
-    Handler for the cfip-order-intelligence order-select hook.
+    Phase 5 handler: delegates to the agentic Orchestrator.
 
-    Phase 2: returns a stub card with hardcoded but realistic content.
-    Phase 3+: stub values replaced with real denial scoring, cost, PGx.
+    The Orchestrator replaces the Phase 4 if/elif drug-class router:
+      - Selects the evidence chain for the drug class (glp1 / oncology /
+        pgx_sensitive / standard)
+      - Executes each step (scoring, PA bundle, PGx, NCCN validation…)
+      - Generates an LLM narrative via OpenAI (template fallback)
+      - Composes CDS Hooks cards via card_composer
+
+    For high-denial-risk orders (score < 50, or moderate with prior denials),
+    an appeal letter draft is generated and linked as a second card.
+
+    Always returns a valid CdsResponse — never raises a 500 to Epic.
+    C# analogy: thin controller action that dispatches to a MediatR handler.
     """
-    # ------------------------------------------------------------------
-    # Extract patient ID from context
-    # dict.get() returns None if the key is absent — no KeyError.
-    # C# analogy: dict.TryGetValue("patientId", out var patientId)
-    # ------------------------------------------------------------------
-    patient_id: str | None = request.context.get("patientId")
-    if not patient_id:
-        raise HTTPException(
-            status_code=400,
-            detail="Hook context missing required field: patientId",
-        )
+    orchestrator = Orchestrator()
 
-    # ------------------------------------------------------------------
-    # Extract medication name — from prefetch if Epic provided it,
-    # otherwise fall back to a FHIR call using our Phase 1 client.
-    # ------------------------------------------------------------------
-    medication_name = _extract_medication_from_prefetch(request)
-
-    if medication_name is None:
-        logger.info("Prefetch missing medication — fetching from Epic FHIR")
-        medication_name = await _fetch_medication_name(patient_id)
-
-    logger.info("Processing order: patient=%s medication=%s", patient_id, medication_name)
-
-    # ------------------------------------------------------------------
-    # Build stub card
-    # Phase 2: all values are hardcoded to prove the shape is correct.
-    # Phase 3 will replace these with real computed values.
-    # ------------------------------------------------------------------
-    card = _build_stub_card(medication_name, patient_id)
-    return CdsResponse(cards=[card])
-
-
-def _extract_medication_from_prefetch(request: HookRequest) -> str | None:
-    """
-    Pull the medication display name out of the prefetch bundle.
-
-    Epic prefetch structure for our "medications" template:
-      prefetch.medications = FHIR Bundle with MedicationRequest entries
-      Each entry.resource.medicationCodeableConcept.text = drug name
-
-    Returns None if prefetch is absent or doesn't contain a medication name.
-    """
-    if not request.prefetch:
-        return None
-
-    # Try to get the medications bundle
-    med_bundle = request.prefetch.get("medications")
-    if not med_bundle:
-        return None
-
-    # Navigate the nested FHIR structure safely using .get() at each level.
-    # This avoids KeyError if any intermediate key is missing.
-    entries: list = med_bundle.get("entry", [])
-    if not entries:
-        return None
-
-    first_resource: dict = entries[0].get("resource", {})
-    # MedicationRequest can encode the drug as either:
-    #   medicationCodeableConcept.text  (most common in Epic)
-    #   medicationCodeableConcept.coding[0].display
-    med_concept: dict = first_resource.get("medicationCodeableConcept", {})
-    name = med_concept.get("text") or (
-        med_concept.get("coding", [{}])[0].get("display")
-    )
-    return name or None
-
-
-async def _fetch_medication_name(patient_id: str) -> str:
-    """
-    Fallback: fetch the most recent active MedicationRequest from Epic
-    when prefetch wasn't provided.
-    """
     try:
-        async with FhirClient() as client:
-            # FhirClient doesn't have a get_medications method yet —
-            # that's added in Phase 3. For now, return a placeholder.
-            # TODO Phase 3: implement client.get_medication_requests()
-            logger.info("Medication fetch fallback — placeholder until Phase 3")
-            return "Unknown medication"
-    except Exception as e:
-        logger.warning("Medication fetch failed: %s", e)
-        return "Unknown medication"
+        result = await orchestrator.process(request)
+    except Exception as exc:
+        logger.exception("Orchestrator error — returning empty response: %s", exc)
+        return CdsResponse(cards=[])
+
+    # Build final trace — appeal generation happens after the orchestrator, so we append it below
+    trace = list(result.evidence_chain_log)
+
+    # Generate appeal letter when denial risk warrants it
+    if should_generate_appeal(result) and result.cards:
+        try:
+            generator = AppealGenerator()
+            letter = await generator.generate(result)
+
+            # Persist in the in-memory store and build a card with a "View" link
+            appeal_id = _store_appeal(letter)
+            appeal_card = _make_appeal_card(letter, appeal_id)
+
+            # Append the appeal card after the primary analysis card
+            updated_cards = list(result.cards) + [appeal_card]
+            result = result.model_copy(update={"cards": updated_cards})
+
+            model = "GPT-4o-mini" if letter.source == "openai" else "template fallback"
+            trace.append(f"AI appeal_letter: Appeal draft written — {model} ({len(letter.content)} chars)")
+
+            logger.info(
+                "Appeal letter generated: id=%s drug=%s risk=%s source=%s",
+                appeal_id, letter.drug, letter.generated_for_risk_level, letter.source,
+            )
+        except Exception as exc:
+            trace.append(f"ERR appeal_letter: {exc}")
+            logger.warning("Appeal generation failed — continuing without appeal: %s", exc)
+
+    return CdsResponse(cards=result.cards, agent_trace=trace)
 
 
-def _build_stub_card(medication_name: str, patient_id: str) -> Card:
+# ---------------------------------------------------------------------------
+# Appeal helpers
+# ---------------------------------------------------------------------------
+
+def _store_appeal(letter: AppealLetter) -> str:
     """
-    Build a spec-compliant CDS card with stub (hardcoded) intelligence values.
+    Persist the appeal letter in the in-memory store and return its UUID key.
 
-    Phase 2 goal: prove the card shape is correct and renders in the harness.
-    Phase 3: replace hardcoded values with real denial scoring + cost data.
-    Phase 4: add real PGx results.
+    C# analogy: IAppealRepository.Save(letter) returning the new entity ID.
     """
+    appeal_id = str(uuid.uuid4())
+    _APPEAL_STORE[appeal_id] = letter
+    return appeal_id
+
+
+def _make_appeal_card(letter: AppealLetter, appeal_id: str) -> Card:
+    """
+    Build a CDS Hooks card that links to the generated appeal draft.
+
+    The card is "warning" indicator to draw attention without alarming the
+    clinician — it is an opportunity, not an error.
+
+    C# analogy: a factory method producing a Card DTO from an AppealLetter.
+    """
+    payer_note = f" ({letter.payer})" if letter.payer else ""
+    reason_readable = letter.denial_reason.replace("_", " ").title()
+    source_badge = "_(AI-generated)_" if letter.source == "openai" else "_(template)_"
+
     return Card(
-        # summary must be ≤140 chars — Pydantic enforces this via max_length
-        summary=f"{medication_name}: 87% approval | $150/mo | No PGx issues",
-        indicator="info",
+        summary=f"PA Appeal Draft Ready — {letter.drug}{payer_note}",
+        indicator="warning",
         source=CFIP_SOURCE,
-        # detail supports markdown — Epic renders it in an expandable section
         detail=(
-            f"**Prior Authorization Assessment** (stub — Phase 2)\n\n"
-            f"- **Denial risk:** 13% (87% approval probability)\n"
-            f"- **Step therapy:** Metformin trial documented (6 months) ✓\n"
-            f"- **Estimated cost:** $150/mo patient copay (UHC Tier 3)\n"
-            f"- **Pharmacogenomics:** No CYP interactions identified ✓\n\n"
-            f"*Real intelligence from Phase 3+ — this is a stub card.*"
+            f"### Prior Authorization Appeal Draft {source_badge}\n\n"
+            f"**Drug:** {letter.drug}  \n"
+            f"**Payer:** {letter.payer or 'Unknown'}  \n"
+            f"**Denial reason addressed:** {reason_readable}  \n"
+            f"**Risk level:** {letter.generated_for_risk_level}\n\n"
+            f"A formal appeal letter has been drafted for your review. "
+            f"Click **View Appeal Draft** to open the letter — edit as needed "
+            f"before sending to the payer's medical director.\n\n"
+            + (
+                f"**Evidence cited in draft:** {'; '.join(letter.evidence_references[:3])}\n\n"
+                if letter.evidence_references
+                else ""
+            )
+            + "_This is a draft only. Review and sign before submission._"
         ),
-        suggestions=[
-            Suggestion(
-                label="Submit Prior Authorization",
-                isRecommended=True,
-                # Actions will be wired to real PA submission in Phase 5
-            ),
-        ],
+        suggestions=[],
         links=[
             Link(
-                label="View Full Analysis",
-                # In Phase 6 this becomes a real SMART launch URL with patient context
-                url=f"http://localhost:8000/companion?patient={patient_id}",
+                label="View Appeal Draft",
+                url=f"http://localhost:{get_settings().app_port}/cds-services/appeals/{appeal_id}",
                 type="absolute",
-            ),
+            )
         ],
-        selectionBehavior="at-most-one",
     )

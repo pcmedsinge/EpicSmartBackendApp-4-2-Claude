@@ -168,6 +168,11 @@ class CdsResponse(CdsBase):
     # EHR should perform automatically. Unused in Phase 2 but modelled for completeness.
     systemActions: list[Action] = Field(default_factory=list)
 
+    # CDS Hooks spec allows extension fields — Epic ignores unknown keys.
+    # The harness uses this to display the agent reasoning trace in
+    # "View Full Analysis" without a separate endpoint.
+    agent_trace: list[str] = Field(default_factory=list)
+
 
 # ---------------------------------------------------------------------------
 # Discovery — what GET /cds-services returns

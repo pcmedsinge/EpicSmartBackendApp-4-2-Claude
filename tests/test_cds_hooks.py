@@ -205,19 +205,29 @@ class TestHookHandler:
         for card in cards:
             assert "label" in card["source"], "Card source missing label"
 
-    def test_missing_patient_id_returns_400(self, client):
-        """A hook request without patientId in context must return HTTP 400."""
+    def test_missing_patient_id_returns_safe_card(self, client):
+        """
+        Phase 5: a hook request without patientId returns 200 with at least one card.
+
+        Phase 4 returned a PipelineError info card (bridge couldn't identify patient).
+        Phase 5: the orchestrator runs the standard chain with no patient data,
+        producing a denial-prevention card based on empty evidence. The key
+        invariant is: never return 500 or 400 to Epic — always a valid CdsResponse.
+        """
         bad_request = {
             "hook": "order-select",
             "hookInstance": str(uuid.uuid4()),
-            # context is missing patientId
-            "context": {"userId": "Practitioner/demo"},
+            "context": {"userId": "Practitioner/demo"},  # patientId missing
         }
         response = client.post(
             "/cds-services/cfip-order-intelligence",
             json=bad_request,
         )
-        assert response.status_code == 400
+        assert response.status_code == 200
+        body = response.json()
+        assert len(body["cards"]) >= 1
+        # Phase 5 invariant: valid indicator on every card
+        assert body["cards"][0]["indicator"] in ("info", "warning", "critical")
 
     def test_malformed_body_returns_422(self, client):
         """A body that fails Pydantic validation returns 422 Unprocessable Entity."""

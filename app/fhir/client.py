@@ -12,6 +12,7 @@ registered as scoped/singleton in DI.
 """
 
 import logging
+from datetime import date, datetime, timezone
 
 import httpx
 
@@ -159,3 +160,153 @@ class FhirClient:
             [c.payor_name for c in coverages],
         )
         return coverages
+
+    async def get_observations(
+        self,
+        patient_id: str,
+        loinc_code: str,
+    ) -> list[dict]:
+        """
+        Search for Observation resources by LOINC code, most recent first.
+        Returns a list of raw resource dicts — the bridge extracts what it needs.
+
+        Epic endpoint: GET /Observation?patient={id}&code={loinc}&_sort=-date&_count=5
+
+        Common LOINC codes used in CFIP:
+          4548-4   — HbA1c (%)
+          39156-5  — BMI (kg/m²)
+        """
+        raw = await self._get(
+            "/Observation",
+            params={
+                "patient": patient_id,
+                "code": loinc_code,
+                "_sort": "-date",   # most recent first
+                "_count": "5",      # we only need the latest, but fetch a few for resilience
+            },
+        )
+        bundle = Bundle.model_validate(raw)
+        resources = [r for r in bundle.resources() if r.get("resourceType") == "Observation"]
+        logger.info(
+            "Fetched %d Observation(s) for patient %s, LOINC %s",
+            len(resources),
+            patient_id,
+            loinc_code,
+        )
+        return resources
+
+    async def get_medication_requests(
+        self,
+        patient_id: str,
+        rxnorm_codes: list[str],
+    ) -> list[dict]:
+        """
+        Search for MedicationRequest resources matching any of the given RxNorm codes.
+        Returns a list of raw resource dicts — the bridge calculates days from authoredOn.
+
+        Epic endpoint: GET /MedicationRequest?patient={id}&code={codes}
+
+        Common RxNorm codes used in CFIP:
+          6809  — metformin (ingredient-level code)
+        """
+        # Epic accepts multiple codes as a comma-separated string
+        # C# analogy: string.Join(",", rxnormCodes)
+        code_param = ",".join(rxnorm_codes)
+
+        raw = await self._get(
+            "/MedicationRequest",
+            params={
+                "patient": patient_id,
+                "code": code_param,
+                "_sort": "-authoredon",  # most recent first
+                "_count": "10",
+            },
+        )
+        bundle = Bundle.model_validate(raw)
+        resources = [
+            r for r in bundle.resources()
+            if r.get("resourceType") == "MedicationRequest"
+        ]
+        logger.info(
+            "Fetched %d MedicationRequest(s) for patient %s, codes %s",
+            len(resources),
+            patient_id,
+            code_param,
+        )
+        return resources
+
+    async def get_genomic_observations(self, patient_id: str) -> list[dict]:
+        """
+        Fetch genomic Observations for a patient (PGx gene results).
+
+        Epic endpoint: GET /Observation?patient={id}&category=genomics
+
+        Genomic observations in FHIR R4 encode PGx results as Observations
+        with category=genomics. The gene name is in the code or component,
+        and the diplotype is in valueString or valueCodeableConcept.
+
+        Returns raw resource dicts — the PGx agent parses gene/diplotype from them.
+        Returns an empty list if no genomic data exists (common — most patients
+        haven't had PGx testing).
+        """
+        try:
+            raw = await self._get(
+                "/Observation",
+                params={
+                    "patient": patient_id,
+                    "category": "genomics",
+                    "_count": "50",
+                },
+            )
+            bundle = Bundle.model_validate(raw)
+            resources = [
+                r for r in bundle.resources()
+                if r.get("resourceType") == "Observation"
+            ]
+            logger.info(
+                "Fetched %d genomic Observation(s) for patient %s",
+                len(resources),
+                patient_id,
+            )
+            return resources
+        except Exception as exc:
+            # Genomic observations are often absent — treat fetch failure as empty,
+            # not as a pipeline error. The PGx agent will fall back to synthetic data.
+            logger.warning("Genomic observation fetch failed for patient %s: %s", patient_id, exc)
+            return []
+
+
+# ---------------------------------------------------------------------------
+# FHIR date parsing helpers — used by the bridge to calculate "days old"
+# ---------------------------------------------------------------------------
+
+def parse_fhir_date(date_str: str | None) -> date | None:
+    """
+    Parse a FHIR date or dateTime string into a Python date.
+
+    FHIR supports several formats:
+      "2024-03-15"                  — date only
+      "2024-03-15T10:30:00+00:00"  — full dateTime with timezone
+      "2024-03-15T10:30:00Z"       — UTC shorthand
+
+    Returns None if the string is missing or unparseable.
+    C# analogy: DateTime.TryParse() returning a nullable DateTime.
+    """
+    if not date_str:
+        return None
+    try:
+        # Try date-only first (most common for lab results)
+        return date.fromisoformat(date_str[:10])
+    except ValueError:
+        return None
+
+
+def days_since(observation_date: date | None) -> int | None:
+    """
+    Return the number of days between an observation date and today.
+    Returns None if observation_date is None.
+    """
+    if observation_date is None:
+        return None
+    # date.today() returns the current local date (no time component)
+    return (date.today() - observation_date).days

@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CFIP — Clinical-Financial Intelligence Platform</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:    #2563eb;
+      --green:   #059669;
+      --amber:   #d97706;
+      --red:     #dc2626;
+      --purple:  #7c3aed;
+      --slate:   #475569;
+      --light:   #f8fafc;
+      --border:  #e2e8f0;
+      --text:    #1e293b;
+      --muted:   #64748b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f1f5f9;
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    /* ── Nav ─────────────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 0.75rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      z-index: 100;
+      font-size: 0.85rem;
+    }
+    nav .brand { font-weight: 700; font-size: 1rem; color: #fff; }
+    nav a { color: #94a3b8; text-decoration: none; }
+    nav a:hover { color: #fff; }
+
+    /* ── Layout ───────────────────────────────────────────── */
+    .page { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #fff;
+      padding: 3rem 2rem;
+      border-radius: 12px;
+      margin-bottom: 2.5rem;
+    }
+    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.5rem; }
+    .hero .tagline { font-size: 1.1rem; color: #94a3b8; margin-bottom: 1.5rem; }
+    .hero .pills { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .pill {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      color: #e2e8f0;
+    }
+
+    /* ── Sections ─────────────────────────────────────────── */
+    section { margin-bottom: 3rem; }
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+      color: var(--text);
+    }
+    h3 { font-size: 1.1rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: var(--text); }
+    p { margin-bottom: 0.9rem; color: #334155; }
+
+    /* ── Cards / boxes ────────────────────────────────────── */
+    .box {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .box-blue   { border-left: 4px solid var(--blue); }
+    .box-green  { border-left: 4px solid var(--green); }
+    .box-amber  { border-left: 4px solid var(--amber); }
+    .box-red    { border-left: 4px solid var(--red); }
+    .box-purple { border-left: 4px solid var(--purple); }
+
+    /* ── Phase timeline ───────────────────────────────────── */
+    .phases { display: flex; flex-direction: column; gap: 0.75rem; }
+    .phase {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+    }
+    .phase-badge {
+      flex-shrink: 0;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+    .phase-content h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .phase-content p  { font-size: 0.875rem; color: var(--muted); margin: 0; }
+    .done    { background: var(--green); }
+    .active  { background: var(--blue); }
+    .planned { background: #94a3b8; }
+
+    /* ── SVG diagrams ─────────────────────────────────────── */
+    .diagram {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin: 1.25rem 0;
+      overflow-x: auto;
+    }
+    .diagram svg { display: block; margin: 0 auto; }
+
+    /* ── Scenario cards ───────────────────────────────────── */
+    .scenario-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .scenario-badge {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+
+    .cds-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin: 1rem 0;
+    }
+    .cds-card-bar { height: 5px; }
+    .bar-warning  { background: #f59e0b; }
+    .bar-critical { background: #ef4444; }
+    .bar-info     { background: #3b82f6; }
+    .cds-card-body { padding: 1rem 1.25rem; }
+    .cds-card-indicator {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+    .ind-warning  { background: #fef3c7; color: #b45309; }
+    .ind-critical { background: #fee2e2; color: #b91c1c; }
+    .ind-info     { background: #dbeafe; color: #1d4ed8; }
+    .cds-card-summary { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.75rem; }
+    .cds-card-detail {
+      font-size: 0.83rem;
+      color: #475569;
+      line-height: 1.65;
+      border-top: 1px solid #f1f5f9;
+      padding-top: 0.75rem;
+      white-space: pre-wrap;
+    }
+    .cds-card-detail strong { font-weight: 700; color: #1e293b; }
+
+    /* ── Step list ────────────────────────────────────────── */
+    .steps { display: flex; flex-direction: column; gap: 0; }
+    .step {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+    }
+    .step-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 2rem;
+    }
+    .step-num {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 1;
+    }
+    .step-line {
+      width: 2px;
+      flex: 1;
+      background: var(--border);
+      margin: 2px 0;
+      min-height: 1.5rem;
+    }
+    .step-body {
+      padding: 0 0 1.5rem 0;
+      flex: 1;
+    }
+    .step-body h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.2rem; margin-top: 0.2rem; }
+    .step-body p  { font-size: 0.875rem; color: var(--muted); margin: 0; }
+
+    /* ── Matrix table ─────────────────────────────────────── */
+    .matrix {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .matrix th {
+      background: #1e293b;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      text-align: left;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .matrix td {
+      padding: 0.55rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .matrix tr:last-child td { border-bottom: none; }
+    .matrix tr:nth-child(even) td { background: #f8fafc; }
+    .tick { color: var(--green); font-weight: 700; }
+    .cross { color: #94a3b8; }
+
+    /* ── Callout ──────────────────────────────────────────── */
+    .callout {
+      display: flex;
+      gap: 0.75rem;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      color: #1e40af;
+    }
+    .callout-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .callout-amber {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .callout-green {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+      color: #14532d;
+    }
+
+    /* ── Two col ──────────────────────────────────────────── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="brand">CFIP</span>
+  <a href="#what">What is CFIP</a>
+  <a href="#how">How it Works</a>
+  <a href="#scenarioA">Scenario A</a>
+  <a href="#scenarioB">Scenario B</a>
+  <a href="#why-agentic">Why Agentic</a>
+  <a href="#phases">Roadmap</a>
+</nav>
+
+<div class="page">
+
+  <!-- ── Hero ──────────────────────────────────────────────── -->
+  <div class="hero">
+    <h1>CFIP — Clinical-Financial Intelligence Platform</h1>
+    <p class="tagline">Real-time denial prevention, prior authorization, and pharmacogenomics safety — delivered inside Epic at the moment of prescribing.</p>
+    <div class="pills">
+      <span class="pill">SMART on FHIR</span>
+      <span class="pill">CDS Hooks 2.0</span>
+      <span class="pill">Epic Sandbox</span>
+      <span class="pill">FastAPI + Python</span>
+      <span class="pill">Phase 1–4 Complete</span>
+    </div>
+  </div>
+
+  <!-- ── What is CFIP ────────────────────────────────────────── -->
+  <section id="what">
+    <h2>What is CFIP?</h2>
+    <p>Every day, providers order medications that get denied by insurance payers — sometimes weeks after the order was placed. The provider must then appeal, gather documentation, or switch the patient to a different drug. This delay harms patients and wastes clinical time.</p>
+    <p><strong>CFIP intercepts this problem at the point of prescribing.</strong> The moment a provider selects a medication in Epic, CFIP fires in the background, checks the patient's clinical data against the payer's prior authorization criteria, and returns an actionable card — before the order is even submitted.</p>
+
+    <div class="two-col">
+      <div class="box box-red">
+        <h4 style="margin:0 0 0.4rem; color:#dc2626;">Without CFIP</h4>
+        <p style="font-size:0.875rem; margin:0; color:#64748b;">Provider orders drug → submits PA → payer denies 2 weeks later → appeal → patient delay → rework.</p>
+      </div>
+      <div class="box box-green">
+        <h4 style="margin:0 0 0.4rem; color:#059669;">With CFIP</h4>
+        <p style="font-size:0.875rem; margin:0; color:#64748b;">Provider selects drug → CFIP card appears instantly → provider fixes gaps before submitting → PA approved first time.</p>
+      </div>
+    </div>
+
+    <h3>Three Intelligence Pipelines (Phase 4)</h3>
+    <div class="box box-blue">
+      <strong>GLP-1 Prior Authorization</strong> — For drugs like Ozempic and Wegovy, CFIP checks whether the patient meets the payer's PA criteria: metformin step therapy, A1C threshold, BMI, and coverage. Returns a denial risk score and PA bundle status.
+    </div>
+    <div class="box box-amber">
+      <strong>PGx Safety (Pharmacogenomics)</strong> — For drugs like clopidogrel (Plavix), CFIP checks the patient's genome against CPIC guidelines. If the patient can't metabolize the drug due to a gene variant, CFIP fires a critical safety alert and recommends alternatives.
+    </div>
+    <div class="box" style="border-left:4px solid #94a3b8;">
+      <strong>Generic Info Card</strong> — For all other drugs, CFIP returns a lightweight info card noting that specific intelligence isn't yet available. Phases 5+ expand coverage.
+    </div>
+  </section>
+
+  <!-- ── End-to-End Workflow ─────────────────────────────────── -->
+  <section id="how">
+    <h2>End-to-End Workflow</h2>
+    <p>Here is exactly what happens from the moment a provider opens the prescribing screen to when they see the CFIP card.</p>
+
+    <!-- E2E Flow Diagram -->
+    <div class="diagram">
+      <svg width="860" height="120" viewBox="0 0 860 120" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+          </marker>
+          <marker id="arr-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#059669"/>
+          </marker>
+        </defs>
+
+        <!-- Boxes -->
+        <!-- 1. Provider -->
+        <rect x="10"  y="35" width="110" height="50" rx="8" fill="#1e293b"/>
+        <text x="65"  y="57" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Provider</text>
+        <text x="65"  y="73" text-anchor="middle" fill="#94a3b8" font-size="10">selects drug</text>
+
+        <!-- 2. Epic -->
+        <rect x="170" y="35" width="110" height="50" rx="8" fill="#2563eb"/>
+        <text x="225" y="57" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Epic EHR</text>
+        <text x="225" y="73" text-anchor="middle" fill="#bfdbfe" font-size="10">fires CDS Hook</text>
+
+        <!-- 3. CFIP -->
+        <rect x="330" y="25" width="200" height="70" rx="8" fill="#0f172a" stroke="#3b82f6" stroke-width="2"/>
+        <text x="430" y="50" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">CFIP Backend</text>
+        <text x="430" y="65" text-anchor="middle" fill="#94a3b8" font-size="10">classify → pipeline → score</text>
+        <text x="430" y="80" text-anchor="middle" fill="#60a5fa" font-size="9">FastAPI + FHIR + SQLite</text>
+
+        <!-- 4. FHIR -->
+        <rect x="580" y="35" width="110" height="50" rx="8" fill="#7c3aed"/>
+        <text x="635" y="57" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Epic FHIR</text>
+        <text x="635" y="73" text-anchor="middle" fill="#ddd6fe" font-size="10">patient data</text>
+
+        <!-- 5. Card back -->
+        <rect x="740" y="35" width="110" height="50" rx="8" fill="#059669"/>
+        <text x="795" y="57" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">CDS Card</text>
+        <text x="795" y="73" text-anchor="middle" fill="#bbf7d0" font-size="10">shown in Epic</text>
+
+        <!-- Arrows forward -->
+        <line x1="120" y1="60" x2="165" y2="60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="280" y1="60" x2="325" y2="60" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="530" y1="55" x2="575" y2="55" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="575" y1="65" x2="530" y2="65" stroke="#7c3aed" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Arrow back (green) -->
+        <path d="M530 60 Q555 105 650 110 Q750 115 790 90" stroke="#059669" stroke-width="1.5" fill="none" marker-end="url(#arr-green)"/>
+
+        <!-- Labels -->
+        <text x="142" y="52" text-anchor="middle" fill="#64748b" font-size="9">HTTP POST</text>
+        <text x="302" y="52" text-anchor="middle" fill="#64748b" font-size="9">hook payload</text>
+        <text x="550" y="47" text-anchor="middle" fill="#7c3aed" font-size="9">GET /Patient</text>
+        <text x="550" y="75" text-anchor="middle" fill="#7c3aed" font-size="9">GET /Observation</text>
+        <text x="660" y="119" text-anchor="middle" fill="#059669" font-size="9">CdsResponse { cards: [...] }</text>
+      </svg>
+    </div>
+
+    <!-- Step by step -->
+    <h3>Step-by-Step Walkthrough</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num">1</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>Provider opens order entry in Epic</h4>
+          <p>A cardiologist searches for "clopidogrel" or a GP types "Ozempic". The moment the drug is selected (before submitting), Epic detects an <code>order-select</code> event.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num">2</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>Epic fires a CDS Hook at CFIP</h4>
+          <p>Epic sends a <strong>POST /cds-services/cfip-order-intelligence</strong> with a JSON payload containing: the patient ID, the draft medication order, and pre-fetched FHIR data (patient demographics, active medications).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num">3</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>CFIP classifies the drug</h4>
+          <p>CFIP extracts the drug name and RxNorm code from the order. The <strong>Drug Classifier</strong> maps it to a class: <code>glp1</code>, <code>pgx_sensitive</code>, <code>oncology</code>, or <code>standard</code>. This determines which pipeline runs next.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num">4</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>CFIP fetches the patient's clinical data from Epic FHIR</h4>
+          <p>CFIP calls Epic's FHIR R4 API: <code>GET /Patient/{id}</code>, <code>GET /Observation?code=4548-4</code> (A1C), <code>GET /Observation?code=39156-5</code> (BMI), <code>GET /MedicationRequest</code> (medication history), <code>GET /Coverage</code> (insurance). If data is missing, a synthetic overlay fills gaps for the demo.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num">5</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>The correct pipeline runs</h4>
+          <p><strong>GLP-1:</strong> Weighted denial scorer checks 5 PA criteria against payer rules stored in SQLite. Specialty PA Builder assembles a structured PA bundle. <br/><strong>PGx:</strong> CPIC engine checks the patient's diplotype against the pharmacogenomics knowledge base.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num" style="background:var(--green);">6</div><div class="step-line" style="display:none;"></div></div>
+        <div class="step-body">
+          <h4>CFIP returns a CDS Card to Epic</h4>
+          <p>The card appears inside Epic's order entry screen — no new window, no separate system. The provider sees the denial risk score, PA status, or safety alert without leaving their workflow. The card has action buttons: "Submit PA Now", "Review Documentation", or "Switch to Prasugrel".</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routing Diagram -->
+    <h3>Drug Classification and Routing</h3>
+    <div class="diagram">
+      <svg width="740" height="260" viewBox="0 0 740 260" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;">
+        <defs>
+          <marker id="a2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+        </defs>
+
+        <!-- Hook comes in -->
+        <rect x="280" y="10" width="180" height="44" rx="8" fill="#1e293b"/>
+        <text x="370" y="30" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">CDS Hook Received</text>
+        <text x="370" y="46" text-anchor="middle" fill="#94a3b8" font-size="10">order-select</text>
+
+        <!-- Classifier -->
+        <rect x="280" y="80" width="180" height="44" rx="8" fill="#2563eb"/>
+        <text x="370" y="99" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Drug Classifier</text>
+        <text x="370" y="115" text-anchor="middle" fill="#bfdbfe" font-size="10">name + RxNorm lookup</text>
+
+        <!-- Arrow down -->
+        <line x1="370" y1="54" x2="370" y2="78" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+
+        <!-- Three branches -->
+        <!-- GLP-1 branch -->
+        <line x1="280" y1="102" x2="120" y2="155" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+        <rect x="30"  y="155" width="175" height="55" rx="8" fill="#059669"/>
+        <text x="117" y="176" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">GLP-1 Pipeline</text>
+        <text x="117" y="192" text-anchor="middle" fill="#bbf7d0" font-size="10">denial scorer + PA bundle</text>
+        <text x="117" y="205" text-anchor="middle" fill="#bbf7d0" font-size="9">→ warning/info card</text>
+
+        <!-- PGx branch -->
+        <line x1="370" y1="124" x2="370" y2="155" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+        <rect x="282" y="155" width="175" height="55" rx="8" fill="#dc2626"/>
+        <text x="370" y="176" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">PGx Pipeline</text>
+        <text x="370" y="192" text-anchor="middle" fill="#fecaca" font-size="10">CPIC engine + gene check</text>
+        <text x="370" y="205" text-anchor="middle" fill="#fecaca" font-size="9">→ critical/warning card</text>
+
+        <!-- Generic branch -->
+        <line x1="460" y1="102" x2="615" y2="155" stroke="#64748b" stroke-width="1.5" marker-end="url(#a2)"/>
+        <rect x="535" y="155" width="175" height="55" rx="8" fill="#475569"/>
+        <text x="622" y="176" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">Generic Handler</text>
+        <text x="622" y="192" text-anchor="middle" fill="#cbd5e1" font-size="10">other drug classes</text>
+        <text x="622" y="205" text-anchor="middle" fill="#cbd5e1" font-size="9">→ info card</text>
+
+        <!-- Labels on branches -->
+        <text x="175" y="138" fill="#059669" font-size="10" font-weight="700">glp1</text>
+        <text x="348" y="148" fill="#dc2626" font-size="10" font-weight="700">pgx_sensitive</text>
+        <text x="528" y="138" fill="#475569" font-size="10" font-weight="700">other</text>
+
+        <!-- Example drugs -->
+        <text x="117" y="230" text-anchor="middle" fill="#64748b" font-size="10">Ozempic · Wegovy · Mounjaro</text>
+        <text x="370" y="230" text-anchor="middle" fill="#64748b" font-size="10">Clopidogrel · Warfarin · Codeine</text>
+        <text x="622" y="230" text-anchor="middle" fill="#64748b" font-size="10">Everything else</text>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ── Scenario A ──────────────────────────────────────────── -->
+  <section id="scenarioA">
+    <h2>Scenario A — GLP-1 Prior Authorization (Ozempic)</h2>
+
+    <div class="scenario-header">
+      <div class="scenario-badge" style="background:#059669;">A</div>
+      <div>
+        <strong>Drug:</strong> Ozempic (semaglutide 0.5mg injection) &nbsp;|&nbsp;
+        <strong>Pipeline:</strong> GLP-1 PA &nbsp;|&nbsp;
+        <strong>Payer:</strong> UnitedHealthcare
+      </div>
+    </div>
+
+    <h3>Clinical Context</h3>
+    <p>Patient Derrick Lin is being prescribed Ozempic for Type 2 Diabetes. Ozempic costs ~$900/month list price — UnitedHealthcare requires Prior Authorization before covering it.</p>
+
+    <h3>What CFIP Checks (UHC GLP-1 PA Criteria)</h3>
+    <table class="matrix">
+      <thead>
+        <tr><th>Criterion</th><th>Required</th><th>Found in Patient Record</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Step therapy — metformin trial</td>
+          <td>≥ 90 days</td>
+          <td>180 days on metformin</td>
+          <td><span class="tick">✅ Met</span></td>
+        </tr>
+        <tr>
+          <td>A1C blood test</td>
+          <td>≥ 7.0% within 6 months</td>
+          <td>5.1% — over 6 years old</td>
+          <td><span class="cross">❌ Not Met</span></td>
+        </tr>
+        <tr>
+          <td>No prior denials</td>
+          <td>Clean history</td>
+          <td>0 prior denials</td>
+          <td><span class="tick">✅ Met</span></td>
+        </tr>
+        <tr>
+          <td>Insurance coverage</td>
+          <td>Active, drug on formulary</td>
+          <td>UHC active, formulary confirmed</td>
+          <td><span class="tick">✅ Met</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-amber" style="margin-top:1rem;">
+      <span class="callout-icon">💡</span>
+      <div><strong>Why A1C matters:</strong> A1C (Glycated Hemoglobin) is a blood test showing average blood sugar over 3 months. Payers require A1C ≥ 7.0% as proof the patient has uncontrolled Type 2 Diabetes — the approved indication for Ozempic. This patient's A1C is 5.1% (normal range), meaning the payer has no clinical evidence of diabetes. The result is also 6+ years old, failing the recency requirement. A real payer would deny this order.</div>
+    </div>
+
+    <h3>Actual CDS Card Returned to Epic</h3>
+    <div class="cds-card">
+      <div class="cds-card-bar bar-warning"></div>
+      <div class="cds-card-body">
+        <div><span class="cds-card-indicator ind-warning">warning</span></div>
+        <div class="cds-card-summary">Ozempic (semaglutide) 0.5mg injection: 55% Approval — Moderate Risk | PA Incomplete | Est. $150/mo</div>
+        <div class="cds-card-detail"><strong>Denial Risk Assessment</strong>
+
+<strong>Approval probability: 55%</strong> (demo data)
+
+<strong>Evidence:</strong>
+✅ Step therapy met: metformin 180 days (required ≥90)
+✅ No prior denials for similar orders with this payer
+✅ Coverage active: UnitedHealthcare confirmed, drug on formulary
+❌ Clinical criteria NOT met: A1C 5.1% below threshold (required ≥7.0%)
+❌ Documentation gaps: A1C result is 2494 days old (must be within 6 months)
+
+<strong>Recommended actions:</strong>
+• Address clinical gaps: A1C 5.1% below threshold (required ≥7.0%)
+• Complete documentation: A1C result is 2494 days old
+
+<strong>Estimated cost:</strong> $150/mo copay
+
+<strong>Prior Authorization Bundle</strong>
+Status: ❌ Requirements Incomplete
+Requirements met: Step therapy met · No prior denials · Coverage active
+Outstanding: Clinical criteria NOT met · Documentation gaps</div>
+      </div>
+    </div>
+
+    <h3>What the Provider Does Next</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-left"><div class="step-num" style="background:#d97706;">!</div><div class="step-line"></div></div>
+        <div class="step-body">
+          <h4>Without CFIP</h4>
+          <p>Provider submits the order → PA gets denied by UHC 2 weeks later citing "A1C not on file / below threshold" → provider must appeal or order lab work after the fact → patient waits another 2 weeks.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-left"><div class="step-num" style="background:#059669;">✓</div><div class="step-line" style="display:none;"></div></div>
+        <div class="step-body">
+          <h4>With CFIP</h4>
+          <p>Provider sees the card immediately → orders a fresh A1C lab → once result comes back ≥ 7.0%, re-submits the order → PA goes out complete → approved first time → no delay for patient.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Scenario B ──────────────────────────────────────────── -->
+  <section id="scenarioB">
+    <h2>Scenario B — PGx Safety Alert (Clopidogrel)</h2>
+
+    <div class="scenario-header">
+      <div class="scenario-badge" style="background:#dc2626;">B</div>
+      <div>
+        <strong>Drug:</strong> Clopidogrel (Plavix) 75mg &nbsp;|&nbsp;
+        <strong>Pipeline:</strong> Pharmacogenomics &nbsp;|&nbsp;
+        <strong>Standard:</strong> CPIC Guidelines
+      </div>
+    </div>
+
+    <h3>Clinical Context</h3>
+    <p>A cardiologist is prescribing clopidogrel (Plavix) after a patient has a cardiac stent placed. Clopidogrel is a standard antiplatelet drug — without it, blood clots can form on the stent. But clopidogrel is a <strong>prodrug</strong>: it must be activated by the CYP2C19 liver enzyme before it works.</p>
+
+    <!-- Gene diagram -->
+    <div class="diagram">
+      <svg width="700" height="170" viewBox="0 0 700 170" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;">
+        <defs>
+          <marker id="a3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+          <marker id="a3r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#dc2626"/>
+          </marker>
+        </defs>
+
+        <!-- Normal path (top) -->
+        <text x="10" y="25" fill="#059669" font-size="11" font-weight="700">Normal Metabolizer (*1/*1)</text>
+        <rect x="10"  y="35" width="130" height="40" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <text x="75"  y="52" text-anchor="middle" fill="#166534" font-size="11" font-weight="600">Clopidogrel</text>
+        <text x="75"  y="67" text-anchor="middle" fill="#166534" font-size="10">(inactive prodrug)</text>
+
+        <rect x="195" y="35" width="130" height="40" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <text x="260" y="52" text-anchor="middle" fill="#166534" font-size="11" font-weight="600">CYP2C19 Enzyme</text>
+        <text x="260" y="67" text-anchor="middle" fill="#166534" font-size="10">activates drug ✅</text>
+
+        <rect x="380" y="35" width="160" height="40" rx="6" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+        <text x="460" y="52" text-anchor="middle" fill="#166534" font-size="11" font-weight="600">Active Metabolite</text>
+        <text x="460" y="67" text-anchor="middle" fill="#166534" font-size="10">inhibits platelet clotting ✅</text>
+
+        <line x1="140" y1="55" x2="191" y2="55" stroke="#059669" stroke-width="1.5" marker-end="url(#a3)"/>
+        <line x1="325" y1="55" x2="376" y2="55" stroke="#059669" stroke-width="1.5" marker-end="url(#a3)"/>
+
+        <!-- Poor metabolizer path (bottom) -->
+        <text x="10" y="115" fill="#dc2626" font-size="11" font-weight="700">Poor Metabolizer (*2/*2) — This Patient</text>
+        <rect x="10"  y="125" width="130" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+        <text x="75"  y="142" text-anchor="middle" fill="#991b1b" font-size="11" font-weight="600">Clopidogrel</text>
+        <text x="75"  y="157" text-anchor="middle" fill="#991b1b" font-size="10">(inactive prodrug)</text>
+
+        <rect x="195" y="125" width="130" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+        <text x="260" y="142" text-anchor="middle" fill="#991b1b" font-size="11" font-weight="600">CYP2C19 Enzyme</text>
+        <text x="260" y="157" text-anchor="middle" fill="#991b1b" font-size="10">non-functional ❌</text>
+
+        <rect x="380" y="125" width="160" height="40" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+        <text x="460" y="142" text-anchor="middle" fill="#991b1b" font-size="11" font-weight="600">No Active Metabolite</text>
+        <text x="460" y="157" text-anchor="middle" fill="#991b1b" font-size="10">stent thrombosis risk ❌</text>
+
+        <line x1="140" y1="145" x2="191" y2="145" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a3r)"/>
+        <line x1="325" y1="145" x2="376" y2="145" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#a3r)"/>
+
+        <!-- Block symbol -->
+        <text x="255" y="120" text-anchor="middle" fill="#dc2626" font-size="18" font-weight="900">⊘</text>
+      </svg>
+    </div>
+
+    <h3>What CPIC Says (Evidence Level 1A)</h3>
+    <table class="matrix">
+      <thead>
+        <tr><th>Gene</th><th>Diplotype</th><th>Metabolizer Status</th><th>CPIC Recommendation</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CYP2C19</td>
+          <td>*1/*1</td>
+          <td>Normal metabolizer</td>
+          <td>Use clopidogrel at standard dose</td>
+        </tr>
+        <tr>
+          <td>CYP2C19</td>
+          <td>*1/*2</td>
+          <td>Intermediate metabolizer</td>
+          <td>Consider alternative antiplatelet agent</td>
+        </tr>
+        <tr style="background:#fef2f2 !important;">
+          <td><strong>CYP2C19</strong></td>
+          <td><strong>*2/*2</strong></td>
+          <td><strong>Poor metabolizer</strong></td>
+          <td><strong style="color:#dc2626;">AVOID — use prasugrel or ticagrelor</strong></td>
+        </tr>
+        <tr>
+          <td>CYP2C19</td>
+          <td>*1/*17</td>
+          <td>Rapid metabolizer</td>
+          <td>Use clopidogrel at standard dose</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout" style="margin-top:1rem;">
+      <span class="callout-icon">🧬</span>
+      <div><strong>What is *2/*2?</strong> The CYP2C19 gene comes in variants called alleles. *1 is the normal functioning copy. *2 is a non-functional variant. This patient inherited two *2 copies — one from each parent — meaning they have essentially zero CYP2C19 enzyme activity. ~2-3% of the population are poor metabolizers. Without PGx testing, there's no way to know without checking the genome.</div>
+    </div>
+
+    <h3>Actual CDS Card Returned to Epic</h3>
+    <div class="cds-card">
+      <div class="cds-card-bar bar-critical"></div>
+      <div class="cds-card-body">
+        <div><span class="cds-card-indicator ind-critical">critical</span></div>
+        <div class="cds-card-summary">⚠️ Clopidogrel: CYP2C19 Poor Metabolizer — Drug Ineffective</div>
+        <div class="cds-card-detail"><strong>⚠️ PGx Safety Alert — Clopidogrel</strong>
+
+<strong>Gene:</strong> CYP2C19  |  <strong>Status:</strong> Poor Metabolizer  |  <strong>Diplotype:</strong> *2/*2
+
+<strong>Clinical impact:</strong>
+This patient is a CYP2C19 poor metabolizer. Clopidogrel requires hepatic
+activation by CYP2C19 — poor metabolizers cannot convert clopidogrel to
+its active form. Standard doses provide &lt;10% of normal platelet inhibition,
+significantly increasing risk of stent thrombosis.
+
+<strong>Recommended alternatives:</strong>
+• Prasugrel (does not require CYP2C19 activation)
+• Ticagrelor (direct-acting, no metabolism required)
+
+<em>CPIC Evidence Level: 1A (cpicpgx.org)</em></div>
+      </div>
+    </div>
+
+    <h3>Why This Matters — Patient Safety</h3>
+    <div class="box box-red">
+      <strong>Without CFIP:</strong> Provider prescribes clopidogrel. Patient takes it for months believing they are protected against stent thrombosis. The drug provides &lt;10% of expected platelet inhibition. A blood clot forms on the stent (stent thrombosis) — a life-threatening cardiac emergency. No one knew the patient couldn't metabolize the drug.
+    </div>
+    <div class="box box-green" style="margin-top:0.75rem;">
+      <strong>With CFIP:</strong> The critical card appears at the moment of prescribing. The cardiologist switches to prasugrel or ticagrelor — both equally effective without requiring CYP2C19 activation. Patient is protected. The PGx result is stored and reused for all future prescribing decisions.
+    </div>
+  </section>
+
+  <!-- ── Why Agentic ─────────────────────────────────────────── -->
+  <section id="why-agentic">
+    <h2>Why We Move to Agentic in Phase 5</h2>
+
+    <p>Phases 3 and 4 used <strong>hand-coded pipelines</strong> — deterministic rule sets for a specific drug class and payer combination. This works well for a demo but hits a wall in production.</p>
+
+    <h3>The Payer × Drug Matrix Problem</h3>
+    <p>In the real world, PA criteria vary by payer <em>and</em> by drug class. Every cell in this matrix is a different rule set:</p>
+
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Drug Class</th>
+          <th>UnitedHealthcare</th>
+          <th>Aetna</th>
+          <th>Blue Cross</th>
+          <th>Cigna</th>
+          <th>Humana</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>GLP-1 agonists</strong></td>
+          <td><span class="tick">✓ A1C ≥7.0%</span></td>
+          <td><span class="tick">✓ A1C ≥8.0%</span></td>
+          <td><span class="tick">✓ BMI ≥35</span></td>
+          <td><span class="tick">✓ 2 drug failures</span></td>
+          <td><span class="tick">✓ varies</span></td>
+        </tr>
+        <tr>
+          <td><strong>Biologics (TNF)</strong></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+        </tr>
+        <tr>
+          <td><strong>Oncology</strong></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+        </tr>
+        <tr>
+          <td><strong>Opioids</strong></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+          <td><span class="tick">✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-amber" style="margin-top:1rem;">
+      <span class="callout-icon">⚠️</span>
+      <div>Each cell is a separate coded rule set. Payers update their criteria <strong>quarterly</strong>. A production system covering 5 payers × 20 drug classes = 100 rule sets to maintain. That is a full-time team just keeping up with policy updates — before writing a single line of clinical logic.</div>
+    </div>
+
+    <h3>What the Agentic Orchestrator Changes</h3>
+    <p>Phase 5 introduces an LLM-powered orchestrator (Claude / GPT-4) that replaces the hand-coded routing logic. Instead of <code>if payer == "Aetna" and drug_class == "glp1"</code>, the agent:</p>
+
+    <div class="diagram">
+      <svg width="700" height="200" viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;">
+        <defs>
+          <marker id="a4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+          </marker>
+        </defs>
+
+        <!-- Phase 4: manual -->
+        <text x="160" y="20" text-anchor="middle" fill="#475569" font-size="12" font-weight="700">Phase 4 — Hand-Coded</text>
+        <rect x="30"  y="30" width="260" height="140" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5"/>
+
+        <rect x="50"  y="50" width="100" height="32" rx="6" fill="#2563eb"/>
+        <text x="100" y="70" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">GLP-1 rules.py</text>
+
+        <rect x="170" y="50" width="100" height="32" rx="6" fill="#7c3aed"/>
+        <text x="220" y="70" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">PGx rules.py</text>
+
+        <rect x="50"  y="100" width="100" height="32" rx="6" fill="#059669"/>
+        <text x="100" y="120" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Oncology rules.py</text>
+
+        <rect x="170" y="100" width="100" height="32" rx="6" fill="#d97706"/>
+        <text x="220" y="120" text-anchor="middle" fill="#fff" font-size="10" font-weight="600">Imaging rules.py</text>
+
+        <text x="160" y="160" text-anchor="middle" fill="#94a3b8" font-size="10">+ 96 more files...</text>
+
+        <!-- Arrow -->
+        <line x1="310" y1="100" x2="370" y2="100" stroke="#64748b" stroke-width="2" marker-end="url(#a4)"/>
+        <text x="340" y="92" text-anchor="middle" fill="#64748b" font-size="10">Phase 5</text>
+
+        <!-- Phase 5: agentic -->
+        <text x="540" y="20" text-anchor="middle" fill="#059669" font-size="12" font-weight="700">Phase 5 — Agentic</text>
+        <rect x="380" y="30" width="300" height="140" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+
+        <rect x="400" y="50" width="260" height="50" rx="8" fill="#1e293b"/>
+        <text x="530" y="71" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">LLM Orchestrator</text>
+        <text x="530" y="87" text-anchor="middle" fill="#94a3b8" font-size="10">reads payer policy → plans → calls tools</text>
+
+        <rect x="400" y="115" width="75" height="30" rx="6" fill="#2563eb"/>
+        <text x="437" y="133" text-anchor="middle" fill="#fff" font-size="10">FHIR tool</text>
+
+        <rect x="485" y="115" width="75" height="30" rx="6" fill="#7c3aed"/>
+        <text x="522" y="133" text-anchor="middle" fill="#fff" font-size="10">PA tool</text>
+
+        <rect x="570" y="115" width="75" height="30" rx="6" fill="#d97706"/>
+        <text x="607" y="133" text-anchor="middle" fill="#fff" font-size="10">Letter tool</text>
+
+        <text x="530" y="162" text-anchor="middle" fill="#059669" font-size="10">works for any drug × any payer</text>
+      </svg>
+    </div>
+
+    <div class="two-col">
+      <div class="box box-red">
+        <h4 style="margin:0 0 0.5rem; color:#dc2626;">Rule-Based Limits</h4>
+        <ul style="font-size:0.875rem; color:#64748b; padding-left:1rem; line-height:1.8;">
+          <li>100+ rule files to maintain</li>
+          <li>Payer updates require code changes</li>
+          <li>New drug = new sprint</li>
+          <li>Can't reason over free-text policies</li>
+          <li>No appeal letter generation</li>
+        </ul>
+      </div>
+      <div class="box box-green">
+        <h4 style="margin:0 0 0.5rem; color:#059669;">Agentic Capabilities</h4>
+        <ul style="font-size:0.875rem; color:#64748b; padding-left:1rem; line-height:1.8;">
+          <li>Reads payer policy PDFs directly</li>
+          <li>New payer = upload document</li>
+          <li>New drug = no code change</li>
+          <li>Generates PA appeal letters</li>
+          <li>Explains its own reasoning</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout callout-green" style="margin-top:1rem;">
+      <span class="callout-icon">🎯</span>
+      <div><strong>The goal of Phase 5:</strong> Adding a new drug/payer combination should be a <em>configuration problem</em> (upload a policy document), not a <em>development problem</em> (write and deploy new code). The rule-based phases (3 and 4) prove the concept and establish the data contracts. The agentic phase makes it commercially scalable.</div>
+    </div>
+  </section>
+
+  <!-- ── Phase Roadmap ───────────────────────────────────────── -->
+  <section id="phases">
+    <h2>Phase Roadmap</h2>
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-badge done">1</div>
+        <div class="phase-content">
+          <h4>Phase 1 — SMART Backend Service &amp; Auth</h4>
+          <p>OAuth 2.0 client credentials with RS384 JWT. Registers as a SMART Backend Service in Epic. Establishes the secure token exchange with Epic's authorization server.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-badge done">2</div>
+        <div class="phase-content">
+          <h4>Phase 2 — CDS Hooks Discovery &amp; Stub Card</h4>
+          <p>GET /cds-services discovery endpoint. POST /cds-services/cfip-order-intelligence hook handler. Returns a placeholder card to prove Epic can call CFIP.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-badge done">3</div>
+        <div class="phase-content">
+          <h4>Phase 3 — Clinical-Financial Bridge (GLP-1 PA)</h4>
+          <p>SQLite payer rules. Weighted denial scorer (5 factors, 100-point model). Synthetic data overlay. Real FHIR data fetch. PA bundle assembly. Denial card composer. 47 tests.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-badge done">4</div>
+        <div class="phase-content">
+          <h4>Phase 4 — PGx Safety + Drug Class Routing (Current)</h4>
+          <p>CPIC pharmacogenomics engine. CYP2C19/clopidogrel safety checking. Drug classifier routing (glp1 / pgx_sensitive / oncology). Specialty PA builder. Two-scenario test harness with Run All button.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-badge active">5</div>
+        <div class="phase-content">
+          <h4>Phase 5 — Agentic Orchestrator (Next)</h4>
+          <p>LLM-powered agent replaces hand-coded routing. Tools: FHIR fetcher, PA submitter, appeal letter generator. Works for any drug × payer combination. OpenAI / Claude API integration.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-badge planned">6</div>
+        <div class="phase-content">
+          <h4>Phase 6 — SMART Companion App</h4>
+          <p>Full SMART on FHIR launch context. Provider-facing React app embedded in Epic sidebar. Shows full analysis, PA submission history, appeal status, cost transparency.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div style="text-align:center; padding-top:2rem; color:#94a3b8; font-size:0.8rem;">
+    CFIP — Clinical-Financial Intelligence Platform &nbsp;·&nbsp; Phase 4 Complete &nbsp;·&nbsp; 2026
+  </div>
+
+</div>
+</body>
+</html>

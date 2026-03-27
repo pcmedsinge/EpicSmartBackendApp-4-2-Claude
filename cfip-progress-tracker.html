@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFIP — Build Progress</title>
+<style>
+  :root {
+    --bg: #ffffff; --bg2: #f5f5f0; --bg3: #eae8e1;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #888780;
+    --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.2);
+    --teal-bg: #E1F5EE; --teal: #0F6E56; --teal-800: #085041;
+    --purple-bg: #EEEDFE; --purple: #534AB7; --purple-800: #3C3489;
+    --amber-bg: #FAEEDA; --amber: #BA7517; --amber-800: #633806;
+    --coral-bg: #FAECE7; --coral: #D85A30; --coral-800: #712B13;
+    --blue-bg: #E6F1FB; --blue: #378ADD; --blue-800: #0C447C;
+    --green-bg: #EAF3DE; --green: #639922; --green-800: #27500A;
+    --pink-bg: #FBEAF0; --pink: #D4537E; --pink-800: #72243E;
+    --red-bg: #FCEBEB; --red: #E24B4A; --red-800: #791F1F;
+    --gray-bg: #F1EFE8; --gray: #888780; --gray-800: #444441;
+    --success: #0F6E56; --success-bg: #E1F5EE;
+    --warning: #BA7517; --warning-bg: #FAEEDA;
+    --info: #378ADD; --info-bg: #E6F1FB;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --bg2: #2c2c2a; --bg3: #3d3d3a;
+      --text: #e8e6df; --text2: #b4b2a9; --text3: #888780;
+      --border: rgba(255,255,255,0.1); --border2: rgba(255,255,255,0.2);
+      --teal-bg: #04342C; --teal: #5DCAA5; --teal-800: #9FE1CB;
+      --purple-bg: #26215C; --purple: #AFA9EC; --purple-800: #CECBF6;
+      --amber-bg: #412402; --amber: #EF9F27; --amber-800: #FAC775;
+      --coral-bg: #4A1B0C; --coral: #F0997B; --coral-800: #F5C4B3;
+      --blue-bg: #042C53; --blue: #85B7EB; --blue-800: #B5D4F4;
+      --green-bg: #173404; --green: #97C459; --green-800: #C0DD97;
+      --pink-bg: #4B1528; --pink: #ED93B1; --pink-800: #F4C0D1;
+      --red-bg: #501313; --red: #F09595; --red-800: #F7C1C1;
+      --gray-bg: #2C2C2A; --gray: #B4B2A9; --gray-800: #D3D1C7;
+      --success: #5DCAA5; --success-bg: #04342C;
+      --warning: #EF9F27; --warning-bg: #412402;
+      --info: #85B7EB; --info-bg: #042C53;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 32px; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: var(--text2); font-size: 14px; margin-bottom: 24px; }
+  .phase-nav { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 24px; }
+  .phase-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .phase-btn:hover { border-color: var(--border2); color: var(--text); }
+  .phase-btn.active { background: var(--info-bg); color: var(--info); border-color: var(--info); font-weight: 600; }
+  .phase-card { display: none; background: var(--bg2); border-radius: 12px; padding: 24px; border: 1px solid var(--border); }
+  .phase-card.visible { display: block; }
+  .phase-header { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .phase-status { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; display: inline-block; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .status-done { background: var(--success-bg); color: var(--success); }
+  .status-next { background: var(--warning-bg); color: var(--warning); }
+  .status-future { background: var(--bg3); color: var(--text3); }
+  .section-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 8px; }
+  .goal-text { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .outcome-list { list-style: none; padding: 0; }
+  .outcome-list li { font-size: 13px; line-height: 1.8; padding-left: 22px; position: relative; color: var(--text2); }
+  .outcome-list li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 8px; height: 8px; border-radius: 50%; }
+  .done-list li::before { background: var(--success); }
+  .next-list li::before { background: var(--warning); }
+  .future-list li::before { background: var(--text3); }
+  .files-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .file-tag { font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; padding: 3px 8px; border-radius: 4px; background: var(--bg); color: var(--text3); border: 1px solid var(--border); }
+  .legend { margin-top: 16px; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; }
+  .legend-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+  .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; }
+  .legend-item { font-size: 12px; line-height: 1.6; }
+  .legend-item strong { color: var(--text); font-weight: 600; }
+  .legend-item span { color: var(--text2); }
+  svg { margin: 12px 0; }
+  svg text.th { font-family: inherit; font-size: 14px; font-weight: 600; fill: var(--text); }
+  svg text.ts { font-family: inherit; font-size: 12px; fill: var(--text2); }
+  svg .arr { stroke: var(--text3); stroke-width: 1.5; }
+  svg .box-teal rect { fill: var(--teal-bg); stroke: var(--teal); stroke-width: 0.5; }
+  svg .box-teal text.th { fill: var(--teal-800); } svg .box-teal text.ts { fill: var(--teal); }
+  svg .box-purple rect { fill: var(--purple-bg); stroke: var(--purple); stroke-width: 0.5; }
+  svg .box-purple text.th { fill: var(--purple-800); } svg .box-purple text.ts { fill: var(--purple); }
+  svg .box-amber rect { fill: var(--amber-bg); stroke: var(--amber); stroke-width: 0.5; }
+  svg .box-amber text.th { fill: var(--amber-800); } svg .box-amber text.ts { fill: var(--amber); }
+  svg .box-coral rect { fill: var(--coral-bg); stroke: var(--coral); stroke-width: 0.5; }
+  svg .box-coral text.th { fill: var(--coral-800); } svg .box-coral text.ts { fill: var(--coral); }
+  svg .box-blue rect { fill: var(--blue-bg); stroke: var(--blue); stroke-width: 0.5; }
+  svg .box-blue text.th { fill: var(--blue-800); } svg .box-blue text.ts { fill: var(--blue); }
+  svg .box-green rect { fill: var(--green-bg); stroke: var(--green); stroke-width: 0.5; }
+  svg .box-green text.th { fill: var(--green-800); } svg .box-green text.ts { fill: var(--green); }
+  svg .box-pink rect { fill: var(--pink-bg); stroke: var(--pink); stroke-width: 0.5; }
+  svg .box-pink text.th { fill: var(--pink-800); } svg .box-pink text.ts { fill: var(--pink); }
+  svg .box-red rect { fill: var(--red-bg); stroke: var(--red); stroke-width: 0.5; }
+  svg .box-red text.th { fill: var(--red-800); } svg .box-red text.ts { fill: var(--red); }
+  svg .box-gray rect { fill: var(--gray-bg); stroke: var(--gray); stroke-width: 0.5; }
+  svg .box-gray text.th { fill: var(--gray-800); } svg .box-gray text.ts { fill: var(--gray); }
+  .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text3); }
+</style>
+</head>
+<body>
+<h1>CFIP — Build progress</h1>
+<p class="subtitle">Clinical-Financial Intelligence Platform — phase-by-phase development tracker</p>
+
+<div class="phase-nav">
+  <button class="phase-btn active" onclick="show(0)">Overview</button>
+  <button class="phase-btn" onclick="show(1)">Phase 1</button>
+  <button class="phase-btn" onclick="show(2)">Phase 2</button>
+  <button class="phase-btn" onclick="show(3)">Phase 3</button>
+  <button class="phase-btn" onclick="show(4)">Phase 4</button>
+  <button class="phase-btn" onclick="show(5)">Phase 5</button>
+  <button class="phase-btn" onclick="show(6)">Phase 6</button>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div class="phase-card visible" id="p0">
+  <div class="phase-header">Build overview</div>
+  <p class="goal-text" style="margin-bottom:16px">6 phases, each building on the last. Phases 1–5 complete. Phase 6 in progress.</p>
+  <table style="width:100%;font-size:13px;border-collapse:collapse">
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-weight:600">Phase 1</td><td style="padding:8px 0;color:var(--text2)">Foundation — OAuth + FHIR read</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-done">done</span></td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-weight:600">Phase 2</td><td style="padding:8px 0;color:var(--text2)">CDS Hooks — endpoints + test harness</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-done">done</span></td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-weight:600">Phase 3</td><td style="padding:8px 0;color:var(--text2)">Clinical-financial bridge — denial scoring</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-done">done</span></td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-weight:600">Phase 4</td><td style="padding:8px 0;color:var(--text2)">PGx safety + specialty PA bundles</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-done">done</span></td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 0;font-weight:600">Phase 5</td><td style="padding:8px 0;color:var(--text2)">Agentic orchestrator + demo harness polish</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-done">done</span></td></tr>
+    <tr><td style="padding:8px 0;font-weight:600">Phase 6</td><td style="padding:8px 0;color:var(--text2)">Real SMART on FHIR — wire Epic FHIR API calls</td><td style="padding:8px 0;text-align:right"><span class="phase-status status-next">next</span></td></tr>
+  </table>
+  <div class="legend">
+    <div class="legend-title">Acronyms &amp; terms</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>CFIP</strong> <span>Clinical-Financial Intelligence Platform (this project)</span></div>
+      <div class="legend-item"><strong>FHIR</strong> <span>Fast Healthcare Interoperability Resources — healthcare data standard</span></div>
+      <div class="legend-item"><strong>CDS</strong> <span>Clinical Decision Support — guidance at point of care</span></div>
+      <div class="legend-item"><strong>PGx</strong> <span>Pharmacogenomics — matching drugs to patient genetics</span></div>
+      <div class="legend-item"><strong>PA</strong> <span>Prior Authorization — insurance pre-approval for treatments</span></div>
+      <div class="legend-item"><strong>SMART</strong> <span>Substitutable Medical Apps, Reusable Tech — auth standard for EHR apps</span></div>
+      <div class="legend-item"><strong>EHR</strong> <span>Electronic Health Record (e.g., Epic)</span></div>
+      <div class="legend-item"><strong>LLM</strong> <span>Large Language Model (e.g., GPT-4o-mini for narratives)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 1 ==================== -->
+<div class="phase-card" id="p1">
+  <div class="phase-header">Phase 1 — Foundation</div>
+  <span class="phase-status status-done">complete</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Authenticate with Epic sandbox via SMART Backend Services OAuth (RS384 JWT), read Patient + Coverage from FHIR R4, print to terminal.</p>
+  <div class="section-label">Workflow</div>
+  <svg width="100%" viewBox="0 0 680 160">
+    <defs><marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-purple"><rect x="40" y="20" width="140" height="56" rx="8"/><text class="th" x="110" y="40" text-anchor="middle" dominant-baseline="central">CFIP backend</text><text class="ts" x="110" y="58" text-anchor="middle" dominant-baseline="central">Creates RS384 JWT</text></g>
+    <line x1="180" y1="48" x2="240" y2="48" class="arr" marker-end="url(#a1)"/>
+    <g class="box-teal"><rect x="240" y="20" width="140" height="56" rx="8"/><text class="th" x="310" y="40" text-anchor="middle" dominant-baseline="central">Epic OAuth</text><text class="ts" x="310" y="58" text-anchor="middle" dominant-baseline="central">Returns bearer token</text></g>
+    <line x1="380" y1="48" x2="440" y2="48" class="arr" marker-end="url(#a1)"/>
+    <g class="box-blue"><rect x="440" y="20" width="160" height="56" rx="8"/><text class="th" x="520" y="40" text-anchor="middle" dominant-baseline="central">Epic FHIR R4</text><text class="ts" x="520" y="58" text-anchor="middle" dominant-baseline="central">Patient + Coverage</text></g>
+    <line x1="520" y1="76" x2="520" y2="110" class="arr" marker-end="url(#a1)"/>
+    <g class="box-green"><rect x="400" y="110" width="240" height="36" rx="8"/><text class="th" x="520" y="132" text-anchor="middle" dominant-baseline="central">Terminal output: Derrick Lin</text></g>
+  </svg>
+  <div class="section-label">Outcomes</div>
+  <ul class="outcome-list done-list">
+    <li>RS384 JWT signing works with Epic's OAuth endpoint</li>
+    <li>Bearer token obtained and cached until expiry</li>
+    <li>FHIR GET /Patient returns typed Pydantic model</li>
+    <li>FHIR GET /Coverage handled gracefully (no sandbox data)</li>
+    <li>verify_epic.py confirms: Patient Derrick Lin loaded successfully</li>
+  </ul>
+  <div class="section-label">Files</div>
+  <div class="files-grid">
+    <span class="file-tag">app/config.py</span><span class="file-tag">app/main.py</span>
+    <span class="file-tag">app/fhir/auth.py</span><span class="file-tag">app/fhir/client.py</span>
+    <span class="file-tag">app/models/fhir_types.py</span><span class="file-tag">tools/verify_epic.py</span>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>OAuth</strong> <span>Open Authorization — industry-standard auth protocol</span></div>
+      <div class="legend-item"><strong>JWT</strong> <span>JSON Web Token — signed token proving identity</span></div>
+      <div class="legend-item"><strong>RS384</strong> <span>RSA signature with SHA-384 — Epic's required signing algorithm</span></div>
+      <div class="legend-item"><strong>FHIR R4</strong> <span>FHIR Release 4 — current version of the healthcare data standard</span></div>
+      <div class="legend-item"><strong>SMART</strong> <span>Substitutable Medical Apps, Reusable Tech — EHR auth framework</span></div>
+      <div class="legend-item"><strong>Pydantic</strong> <span>Python library for typed data models with validation</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 2 ==================== -->
+<div class="phase-card" id="p2">
+  <div class="phase-header">Phase 2 — CDS Hooks service</div>
+  <span class="phase-status status-done">complete</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Wire CDS Hooks endpoints: test harness simulates Epic firing an order-select hook, CFIP returns a valid stub card, browser renders it.</p>
+  <div class="section-label">Workflow</div>
+  <svg width="100%" viewBox="0 0 680 220">
+    <defs><marker id="a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-coral"><rect x="40" y="20" width="160" height="56" rx="8"/><text class="th" x="120" y="40" text-anchor="middle" dominant-baseline="central">Test harness</text><text class="ts" x="120" y="58" text-anchor="middle" dominant-baseline="central">Simulates Epic EHR</text></g>
+    <text class="ts" x="270" y="36" text-anchor="middle" dominant-baseline="central">POST /cds-services/</text>
+    <text class="ts" x="270" y="52" text-anchor="middle" dominant-baseline="central">cfip-order-intelligence</text>
+    <line x1="200" y1="48" x2="370" y2="48" class="arr" marker-end="url(#a2)"/>
+    <g class="box-purple"><rect x="370" y="20" width="180" height="56" rx="8"/><text class="th" x="460" y="40" text-anchor="middle" dominant-baseline="central">CDS Hooks engine</text><text class="ts" x="460" y="58" text-anchor="middle" dominant-baseline="central">Validates + stub response</text></g>
+    <text class="ts" x="280" y="112" text-anchor="middle" dominant-baseline="central">{cards: [...]}</text>
+    <line x1="370" y1="105" x2="200" y2="105" class="arr" marker-end="url(#a2)"/>
+    <g class="box-green"><rect x="40" y="160" width="250" height="36" rx="8"/><text class="th" x="165" y="182" text-anchor="middle" dominant-baseline="central">Browser renders CDS card</text></g>
+    <line x1="120" y1="76" x2="120" y2="160" stroke="var(--text3)" stroke-width="0.5" stroke-dasharray="4 4"/>
+  </svg>
+  <div class="section-label">Outcomes</div>
+  <ul class="outcome-list done-list">
+    <li>GET /cds-services returns valid discovery JSON per spec</li>
+    <li>POST hook handler accepts requests and returns card JSON</li>
+    <li>Prefetch templates declared (Patient + MedicationRequest)</li>
+    <li>Test harness builds realistic order-select requests</li>
+    <li>Browser UI renders cards with colored indicators</li>
+  </ul>
+  <div class="section-label">Files</div>
+  <div class="files-grid">
+    <span class="file-tag">app/models/cds_hooks.py</span><span class="file-tag">app/api/cds_hooks.py</span>
+    <span class="file-tag">harness.py</span><span class="file-tag">scenarios.py</span><span class="file-tag">index.html</span>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>CDS Hooks</strong> <span>Event-driven standard — EHR calls our service when clinician acts</span></div>
+      <div class="legend-item"><strong>order-select</strong> <span>Hook fired when clinician picks a drug/procedure in order entry</span></div>
+      <div class="legend-item"><strong>Prefetch</strong> <span>FHIR data the EHR sends along with the hook (saves round-trips)</span></div>
+      <div class="legend-item"><strong>CDS Card</strong> <span>JSON response rendered as a visual card inside the EHR</span></div>
+      <div class="legend-item"><strong>Indicator</strong> <span>Card urgency: info (blue), warning (orange), critical (red)</span></div>
+      <div class="legend-item"><strong>Test harness</strong> <span>Our tool simulating Epic (sandbox can't fire hooks directly)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 3 ==================== -->
+<div class="phase-card" id="p3">
+  <div class="phase-header">Phase 3 — Clinical-financial bridge</div>
+  <span class="phase-status status-done">complete</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Replace stub card with real denial prediction. 5 weighted evidence factors produce a 0–100 approval score. Card reflects actual risk.</p>
+  <div class="section-label">Workflow</div>
+  <svg width="100%" viewBox="0 0 680 340">
+    <defs><marker id="a3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-coral"><rect x="40" y="10" width="140" height="40" rx="8"/><text class="th" x="110" y="34" text-anchor="middle" dominant-baseline="central">Hook request</text></g>
+    <line x1="180" y1="30" x2="220" y2="30" class="arr" marker-end="url(#a3)"/>
+    <g class="box-purple"><rect x="220" y="10" width="140" height="40" rx="8"/><text class="th" x="290" y="34" text-anchor="middle" dominant-baseline="central">Drug classifier</text></g>
+    <line x1="360" y1="30" x2="400" y2="30" class="arr" marker-end="url(#a3)"/>
+    <g class="box-purple"><rect x="400" y="10" width="140" height="40" rx="8"/><text class="th" x="470" y="34" text-anchor="middle" dominant-baseline="central">Payer rules</text></g>
+    <line x1="290" y1="50" x2="290" y2="80" class="arr" marker-end="url(#a3)"/>
+    <text class="ts" x="340" y="72" text-anchor="middle" dominant-baseline="central">Gather evidence</text>
+    <g class="box-blue"><rect x="40" y="90" width="110" height="36" rx="6"/><text class="ts" x="95" y="112" text-anchor="middle" dominant-baseline="central">A1C + BMI</text></g>
+    <g class="box-blue"><rect x="160" y="90" width="110" height="36" rx="6"/><text class="ts" x="215" y="112" text-anchor="middle" dominant-baseline="central">Rx history</text></g>
+    <g class="box-blue"><rect x="280" y="90" width="110" height="36" rx="6"/><text class="ts" x="335" y="112" text-anchor="middle" dominant-baseline="central">Coverage</text></g>
+    <g class="box-blue"><rect x="400" y="90" width="130" height="36" rx="6"/><text class="ts" x="465" y="112" text-anchor="middle" dominant-baseline="central">Claims history</text></g>
+    <text class="ts" x="590" y="112" text-anchor="middle" dominant-baseline="central" style="fill:var(--text3)">FHIR + synthetic</text>
+    <line x1="95" y1="126" x2="230" y2="170" class="arr" marker-end="url(#a3)"/>
+    <line x1="215" y1="126" x2="260" y2="170" class="arr" marker-end="url(#a3)"/>
+    <line x1="335" y1="126" x2="310" y2="170" class="arr" marker-end="url(#a3)"/>
+    <line x1="465" y1="126" x2="350" y2="170" class="arr" marker-end="url(#a3)"/>
+    <g class="box-amber"><rect x="200" y="170" width="200" height="56" rx="8"/><text class="th" x="300" y="190" text-anchor="middle" dominant-baseline="central">Denial risk scorer</text><text class="ts" x="300" y="208" text-anchor="middle" dominant-baseline="central">5 factors → 0-100 score</text></g>
+    <line x1="300" y1="226" x2="300" y2="256" class="arr" marker-end="url(#a3)"/>
+    <g class="box-purple"><rect x="200" y="256" width="200" height="36" rx="8"/><text class="th" x="300" y="278" text-anchor="middle" dominant-baseline="central">Card composer</text></g>
+    <line x1="300" y1="292" x2="300" y2="316" class="arr" marker-end="url(#a3)"/>
+    <g class="box-green"><rect x="160" y="296" width="280" height="36" rx="8"/><text class="th" x="300" y="318" text-anchor="middle" dominant-baseline="central">Intelligent card: 87% approval</text></g>
+  </svg>
+  <div class="section-label">Scoring model</div>
+  <table style="width:100%;font-size:12px;border-collapse:collapse;margin:4px 0">
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;font-weight:600">Step therapy met</td><td style="color:var(--text2)">Metformin >= 90 days</td><td style="text-align:right;font-weight:600">25 pts</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;font-weight:600">Clinical criteria</td><td style="color:var(--text2)">A1C >= 7.0, BMI >= 30</td><td style="text-align:right;font-weight:600">25 pts</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;font-weight:600">Documentation</td><td style="color:var(--text2)">Labs on file, recent</td><td style="text-align:right;font-weight:600">20 pts</td></tr>
+    <tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 0;font-weight:600">Payer history</td><td style="color:var(--text2)">Past denial patterns</td><td style="text-align:right;font-weight:600">15 pts</td></tr>
+    <tr><td style="padding:4px 0;font-weight:600">Coverage status</td><td style="color:var(--text2)">Active insurance</td><td style="text-align:right;font-weight:600">15 pts</td></tr>
+  </table>
+  <div class="section-label">Outcomes</div>
+  <ul class="outcome-list done-list">
+    <li>Drug classifier identifies GLP-1 drug class</li>
+    <li>Payer rules loaded from SQLite (UHC + GLP-1)</li>
+    <li>5-factor scorer produces auditable 0-100 score</li>
+    <li>Synthetic overlay fills FHIR gaps (toggleable via .env)</li>
+    <li>Card indicator reflects actual risk (info / warning / critical)</li>
+  </ul>
+  <div class="section-label">Files</div>
+  <div class="files-grid">
+    <span class="file-tag">app/data/db.py</span><span class="file-tag">seed_payer_rules.py</span><span class="file-tag">seed_synthetic.py</span>
+    <span class="file-tag">drug_classifier.py</span><span class="file-tag">payer_rules.py</span><span class="file-tag">denial_scorer.py</span>
+    <span class="file-tag">denial_prediction.py</span><span class="file-tag">card_composer.py</span>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>GLP-1</strong> <span>Glucagon-Like Peptide-1 — drug class for diabetes/obesity (Ozempic, Wegovy)</span></div>
+      <div class="legend-item"><strong>A1C</strong> <span>Hemoglobin A1C — 3-month average blood sugar (diabetes marker)</span></div>
+      <div class="legend-item"><strong>BMI</strong> <span>Body Mass Index — weight-to-height ratio</span></div>
+      <div class="legend-item"><strong>Step therapy</strong> <span>Insurance rule: try cheaper drug first (e.g., metformin before Ozempic)</span></div>
+      <div class="legend-item"><strong>UHC</strong> <span>UnitedHealthcare — one of the largest US insurance payers</span></div>
+      <div class="legend-item"><strong>SQLite</strong> <span>Lightweight database for payer rules and denial patterns</span></div>
+      <div class="legend-item"><strong>Rx</strong> <span>Prescription / medication</span></div>
+      <div class="legend-item"><strong>Synthetic overlay</strong> <span>Fake clinical data filling gaps where Epic sandbox has none</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 4 ==================== -->
+<div class="phase-card" id="p4">
+  <div class="phase-header">Phase 4 — PGx CDS + specialty PA</div>
+  <span class="phase-status status-done">complete</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Add pharmacogenomic safety checking (CPIC rules) and PA bundle assembly. Drug classifier routes to the correct pipeline per drug class.</p>
+  <div class="section-label">Workflow</div>
+  <svg width="100%" viewBox="0 0 680 360">
+    <defs><marker id="a4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-coral"><rect x="240" y="10" width="160" height="40" rx="8"/><text class="th" x="320" y="34" text-anchor="middle" dominant-baseline="central">Hook request</text></g>
+    <line x1="320" y1="50" x2="320" y2="70" class="arr" marker-end="url(#a4)"/>
+    <g class="box-purple"><rect x="240" y="70" width="160" height="40" rx="8"/><text class="th" x="320" y="94" text-anchor="middle" dominant-baseline="central">Drug classifier</text></g>
+    <line x1="280" y1="110" x2="130" y2="150" class="arr" marker-end="url(#a4)"/>
+    <text class="ts" x="180" y="126" text-anchor="middle" dominant-baseline="central">GLP-1</text>
+    <g class="box-amber"><rect x="40" y="150" width="180" height="46" rx="8"/><text class="th" x="130" y="166" text-anchor="middle" dominant-baseline="central">Denial pipeline</text><text class="ts" x="130" y="182" text-anchor="middle" dominant-baseline="central">Phase 3 scorer</text></g>
+    <line x1="130" y1="196" x2="130" y2="220" class="arr" marker-end="url(#a4)"/>
+    <g class="box-teal"><rect x="40" y="220" width="180" height="40" rx="8"/><text class="th" x="130" y="244" text-anchor="middle" dominant-baseline="central">PA bundle builder</text></g>
+    <line x1="130" y1="260" x2="130" y2="290" class="arr" marker-end="url(#a4)"/>
+    <g class="box-green"><rect x="20" y="290" width="220" height="40" rx="8"/><text class="th" x="130" y="314" text-anchor="middle" dominant-baseline="central">Card + submit PA action</text></g>
+    <line x1="360" y1="110" x2="510" y2="150" class="arr" marker-end="url(#a4)"/>
+    <text class="ts" x="460" y="126" text-anchor="middle" dominant-baseline="central">PGx-sensitive</text>
+    <g class="box-pink"><rect x="420" y="150" width="180" height="46" rx="8"/><text class="th" x="510" y="166" text-anchor="middle" dominant-baseline="central">CPIC engine</text><text class="ts" x="510" y="182" text-anchor="middle" dominant-baseline="central">Gene-drug rules</text></g>
+    <line x1="470" y1="196" x2="430" y2="230" class="arr" marker-end="url(#a4)"/>
+    <line x1="550" y1="196" x2="580" y2="230" class="arr" marker-end="url(#a4)"/>
+    <g class="box-red"><rect x="360" y="230" width="130" height="36" rx="6"/><text class="ts" x="425" y="252" text-anchor="middle" dominant-baseline="central">Gene interaction</text></g>
+    <g class="box-amber"><rect x="520" y="230" width="130" height="36" rx="6"/><text class="ts" x="585" y="252" text-anchor="middle" dominant-baseline="central">No PGx data</text></g>
+    <line x1="425" y1="266" x2="425" y2="290" class="arr" marker-end="url(#a4)"/>
+    <line x1="585" y1="266" x2="585" y2="290" class="arr" marker-end="url(#a4)"/>
+    <g class="box-green"><rect x="350" y="290" width="160" height="40" rx="8"/><text class="th" x="430" y="314" text-anchor="middle" dominant-baseline="central">Safety alert card</text></g>
+    <g class="box-green"><rect x="520" y="290" width="140" height="40" rx="8"/><text class="th" x="590" y="314" text-anchor="middle" dominant-baseline="central">Recommend test</text></g>
+  </svg>
+  <div class="section-label">Outcomes</div>
+  <ul class="outcome-list done-list">
+    <li>CPIC knowledge base with real clinical gene-drug rules</li>
+    <li>PGx engine catches dangerous drug-gene interactions (CYP2C19 + clopidogrel)</li>
+    <li>Missing PGx data triggers "recommend testing" card</li>
+    <li>PA bundle assembles all evidence for one-click submission</li>
+    <li>Drug classifier routes GLP-1 vs PGx-sensitive to correct pipeline</li>
+    <li>All 4 drug classes supported: GLP-1, PGx-sensitive, oncology, standard</li>
+  </ul>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>PGx</strong> <span>Pharmacogenomics — how genes affect drug response</span></div>
+      <div class="legend-item"><strong>CPIC</strong> <span>Clinical Pharmacogenomics Implementation Consortium — gene-drug guidelines</span></div>
+      <div class="legend-item"><strong>CYP2C19</strong> <span>Liver enzyme gene — variants make clopidogrel ineffective</span></div>
+      <div class="legend-item"><strong>Clopidogrel</strong> <span>Blood thinner (brand: Plavix) — common PGx-sensitive drug</span></div>
+      <div class="legend-item"><strong>Diplotype</strong> <span>Patient's two gene copies (e.g., *2/*2 = both variant)</span></div>
+      <div class="legend-item"><strong>Poor metabolizer</strong> <span>Gene variant causing inability to activate a prodrug</span></div>
+      <div class="legend-item"><strong>PA bundle</strong> <span>Pre-built clinical evidence package for prior auth submission</span></div>
+      <div class="legend-item"><strong>Prasugrel</strong> <span>Alternative blood thinner that doesn't depend on CYP2C19</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 5 ==================== -->
+<div class="phase-card" id="p5">
+  <div class="phase-header">Phase 5 — Agentic orchestrator + harness</div>
+  <span class="phase-status status-done">complete</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Replace if/else routing with a dynamic orchestrator that selects evidence chains based on drug class + payer + patient context. Add OpenAI-generated narratives, appeal letter drafts, and a demo-ready browser harness UI.</p>
+  <div class="section-label">Workflow</div>
+  <svg width="100%" viewBox="0 0 680 300">
+    <defs><marker id="a5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-coral"><rect x="240" y="10" width="160" height="40" rx="8"/><text class="th" x="320" y="34" text-anchor="middle" dominant-baseline="central">CDS Hook request</text></g>
+    <line x1="320" y1="50" x2="320" y2="80" class="arr" marker-end="url(#a5)"/>
+    <g class="box-purple"><rect x="200" y="80" width="240" height="46" rx="8"/><text class="th" x="320" y="96" text-anchor="middle" dominant-baseline="central">Orchestrator</text><text class="ts" x="320" y="114" text-anchor="middle" dominant-baseline="central">Selects evidence chain per drug class</text></g>
+    <line x1="240" y1="126" x2="120" y2="160" class="arr" marker-end="url(#a5)"/>
+    <line x1="300" y1="126" x2="280" y2="160" class="arr" marker-end="url(#a5)"/>
+    <line x1="360" y1="126" x2="420" y2="160" class="arr" marker-end="url(#a5)"/>
+    <line x1="400" y1="126" x2="560" y2="160" class="arr" marker-end="url(#a5)"/>
+    <g class="box-amber"><rect x="40" y="160" width="120" height="36" rx="6"/><text class="ts" x="100" y="182" text-anchor="middle" dominant-baseline="central">GLP-1 denial</text></g>
+    <g class="box-pink"><rect x="175" y="160" width="120" height="36" rx="6"/><text class="ts" x="235" y="182" text-anchor="middle" dominant-baseline="central">PGx safety</text></g>
+    <g class="box-blue"><rect x="360" y="160" width="120" height="36" rx="6"/><text class="ts" x="420" y="182" text-anchor="middle" dominant-baseline="central">NCCN oncology</text></g>
+    <g class="box-teal"><rect x="500" y="160" width="120" height="36" rx="6"/><text class="ts" x="560" y="182" text-anchor="middle" dominant-baseline="central">Denial history</text></g>
+    <line x1="320" y1="196" x2="320" y2="220" class="arr" marker-end="url(#a5)"/>
+    <g class="box-green"><rect x="160" y="220" width="180" height="36" rx="8"/><text class="th" x="250" y="242" text-anchor="middle" dominant-baseline="central">OpenAI narrative</text></g>
+    <g class="box-teal"><rect x="360" y="220" width="180" height="36" rx="8"/><text class="th" x="450" y="242" text-anchor="middle" dominant-baseline="central">Appeal letter draft</text></g>
+    <line x1="250" y1="256" x2="250" y2="280" class="arr" marker-end="url(#a5)"/>
+    <line x1="450" y1="256" x2="450" y2="280" class="arr" marker-end="url(#a5)"/>
+    <g class="box-green"><rect x="100" y="264" width="500" height="28" rx="8"/><text class="th" x="350" y="282" text-anchor="middle" dominant-baseline="central">CDS cards returned to harness</text></g>
+  </svg>
+  <div class="section-label">Outcomes</div>
+  <ul class="outcome-list done-list">
+    <li>Agentic orchestrator replaces static if/else drug-class routing</li>
+    <li>Evidence chains for all 4 scenarios: GLP-1, PGx, oncology, denial prevention</li>
+    <li>OpenAI (GPT-4o-mini) generates card narratives and appeal letter drafts</li>
+    <li>Template fallback when OpenAI is unavailable — no card failure</li>
+    <li>Appeal letters stored in memory, linked from card with "View Appeal Draft"</li>
+    <li>Demo harness: 4 visual scenario cards, processing animation, modal popups</li>
+    <li>Harness UI redesigned for mixed audience (clinicians + developers)</li>
+    <li>HL7 CDS Hooks 1.0 compliant — same endpoint works from Epic or harness</li>
+  </ul>
+  <div class="section-label">Files</div>
+  <div class="files-grid">
+    <span class="file-tag">app/agents/orchestrator.py</span><span class="file-tag">app/agents/evidence_chains.py</span>
+    <span class="file-tag">app/agents/denial_prediction.py</span><span class="file-tag">app/agents/pgx_safety.py</span>
+    <span class="file-tag">app/agents/specialty_pa.py</span><span class="file-tag">app/intelligence/card_composer.py</span>
+    <span class="file-tag">app/intelligence/appeal_generator.py</span><span class="file-tag">app/intelligence/openai_client.py</span>
+    <span class="file-tag">app/rules/nccn_validator.py</span><span class="file-tag">tools/cds_hooks_harness/static/index.html</span>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>Agentic</strong> <span>AI that dynamically decides next steps based on intermediate results</span></div>
+      <div class="legend-item"><strong>Orchestrator</strong> <span>Component chaining analysis steps per drug/payer/patient</span></div>
+      <div class="legend-item"><strong>OpenAI</strong> <span>External LLM API (GPT-4o-mini) for natural language generation</span></div>
+      <div class="legend-item"><strong>NCCN</strong> <span>National Comprehensive Cancer Network — oncology treatment guidelines</span></div>
+      <div class="legend-item"><strong>Keytruda</strong> <span>Cancer immunotherapy drug (pembrolizumab) — requires complex PA</span></div>
+      <div class="legend-item"><strong>PD-L1</strong> <span>Biomarker tested in cancer patients — determines Keytruda eligibility</span></div>
+      <div class="legend-item"><strong>Appeal letter</strong> <span>Formal document contesting an insurance denial — AI-drafted</span></div>
+      <div class="legend-item"><strong>Evidence chain</strong> <span>Ordered sequence of clinical/financial checks for a drug class</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PHASE 6 ==================== -->
+<div class="phase-card" id="p6">
+  <div class="phase-header">Phase 6 — Real SMART on FHIR integration</div>
+  <span class="phase-status status-next">in progress</span>
+  <div class="section-label">Goal</div>
+  <p class="goal-text">Make CFIP a genuine SMART on FHIR Backend App by wiring real Epic FHIR API calls. JWT auth is registered with Epic — Phase 6 exercises it: authenticate, fetch real patient data, use synthetic overlay only for gaps.</p>
+  <div class="section-label">Auth + FHIR fetch flow</div>
+  <svg width="100%" viewBox="0 0 680 220">
+    <defs><marker id="a6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></marker></defs>
+    <g class="box-coral"><rect x="20" y="10" width="160" height="40" rx="8"/><text class="th" x="100" y="34" text-anchor="middle" dominant-baseline="central">CDS Hook fires</text></g>
+    <line x1="180" y1="30" x2="220" y2="30" class="arr" marker-end="url(#a6)"/>
+    <g class="box-purple"><rect x="220" y="10" width="180" height="40" rx="8"/><text class="th" x="310" y="24" text-anchor="middle" dominant-baseline="central">JWT assertion</text><text class="ts" x="310" y="40" text-anchor="middle" dominant-baseline="central">RS384 signed → Epic OAuth</text></g>
+    <line x1="400" y1="30" x2="440" y2="30" class="arr" marker-end="url(#a6)"/>
+    <g class="box-teal"><rect x="440" y="10" width="200" height="40" rx="8"/><text class="th" x="540" y="24" text-anchor="middle" dominant-baseline="central">Epic token endpoint</text><text class="ts" x="540" y="40" text-anchor="middle" dominant-baseline="central">Returns bearer token (cached)</text></g>
+    <line x1="540" y1="50" x2="540" y2="80" class="arr" marker-end="url(#a6)"/>
+    <g class="box-blue"><rect x="380" y="80" width="280" height="46" rx="8"/><text class="th" x="520" y="96" text-anchor="middle" dominant-baseline="central">Epic FHIR R4 (parallel fetch)</text><text class="ts" x="520" y="114" text-anchor="middle" dominant-baseline="central">Patient · Meds · Labs · Conditions · Coverage</text></g>
+    <line x1="380" y1="103" x2="300" y2="140" class="arr" marker-end="url(#a6)"/>
+    <g class="box-amber"><rect x="140" y="140" width="160" height="36" rx="8"/><text class="th" x="220" y="162" text-anchor="middle" dominant-baseline="central">Synthetic overlay</text></g>
+    <text class="ts" x="320" y="134" text-anchor="middle" dominant-baseline="central">gaps only</text>
+    <line x1="220" y1="176" x2="220" y2="200" class="arr" marker-end="url(#a6)"/>
+    <g class="box-green"><rect x="60" y="184" width="520" height="28" rx="8"/><text class="th" x="320" y="202" text-anchor="middle" dominant-baseline="central">Cards with data source tags: "Epic FHIR R4" or "Synthetic overlay"</text></g>
+  </svg>
+  <div class="section-label">Deliverables</div>
+  <ul class="outcome-list next-list">
+    <li>D1 — JWK Set endpoint: <code>GET /.well-known/jwks.json</code> returns RSA public key (currently 404)</li>
+    <li>D2 — FHIR Client: JWT → token → parallel fetch of 5 resource types, token cached in memory</li>
+    <li>D3 — Orchestrator update: FHIR-first data layer replaces prefetch-only reads</li>
+    <li>D4 — Synthetic overlay switches to gap-fill mode (not replace mode)</li>
+    <li>D5 — Harness animation: "Auth with Epic ✓" + "Fetch FHIR Record ✓" steps</li>
+    <li>D6 — Data source tags on cards: shows exactly what came from Epic vs synthetic</li>
+    <li>D7 — Tests: JWT assertion, token caching, FHIR fetch, 404 graceful, 401 re-auth</li>
+  </ul>
+  <div class="section-label">Graceful degradation</div>
+  <ul class="outcome-list next-list">
+    <li>If Epic FHIR call fails — synthetic overlay covers 100%, no card failure</li>
+    <li>Epic sandbox patients won't have PGx / PD-L1 / carboplatin history — synthetic fills these transparently</li>
+    <li><code>USE_SYNTHETIC_OVERLAY=false</code> in .env enables pure FHIR mode for real hospital deployments</li>
+  </ul>
+  <div class="section-label">Files</div>
+  <div class="files-grid">
+    <span class="file-tag">app/api/jwks.py</span><span class="file-tag">app/fhir/epic_client.py</span>
+    <span class="file-tag">app/models/fhir_bundle.py</span><span class="file-tag">app/agents/orchestrator.py</span>
+    <span class="file-tag">app/data/seed_synthetic.py</span><span class="file-tag">app/intelligence/card_composer.py</span>
+    <span class="file-tag">app/main.py</span><span class="file-tag">tests/test_fhir_client.py</span>
+    <span class="file-tag">tools/cds_hooks_harness/static/index.html</span>
+  </div>
+  <div class="legend">
+    <div class="legend-title">Acronyms in this phase</div>
+    <div class="legend-grid">
+      <div class="legend-item"><strong>SMART Backend</strong> <span>M2M auth — server calls Epic FHIR with no user login (system-to-system)</span></div>
+      <div class="legend-item"><strong>JWK / JWKS</strong> <span>JSON Web Key / Key Set — public key published so Epic can verify our JWTs</span></div>
+      <div class="legend-item"><strong>RS384</strong> <span>RSA signature with SHA-384 — Epic's required JWT signing algorithm</span></div>
+      <div class="legend-item"><strong>Token cache</strong> <span>In-memory store for Epic bearer token — reused until expiry (~1 hour)</span></div>
+      <div class="legend-item"><strong>asyncio.gather()</strong> <span>Python async utility — runs 5 FHIR fetches in parallel (C#: Task.WhenAll)</span></div>
+      <div class="legend-item"><strong>Gap-fill overlay</strong> <span>Synthetic data that patches only missing FHIR fields, not all fields</span></div>
+      <div class="legend-item"><strong>Data source tag</strong> <span>Per-field label on cards showing "Epic FHIR R4" vs "Synthetic overlay"</span></div>
+      <div class="legend-item"><strong>Graceful degradation</strong> <span>System stays functional when Epic is unreachable — falls back to synthetic</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">CFIP — Clinical-Financial Intelligence Platform | Last updated: 27 March 2026 | Phases 1–5 complete · Phase 6 in progress</div>
+
+<script>
+function show(idx) {
+  document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('visible'));
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('p'+idx).classList.add('visible');
+  document.querySelectorAll('.phase-btn')[idx].classList.add('active');
+}
+</script>
+</body>
+</html>
