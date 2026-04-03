@@ -695,7 +695,8 @@
     <div class="divider-line"></div>
     <div class="title-block">
       <div class="app-title">Clinical-Financial Intelligence Platform</div>
-      <div class="app-subtitle" style="color:rgba(255,255,255,0.85); font-weight:500;">Agentic SMART on FHIR Backend Service &nbsp;·&nbsp; CDS Hooks &nbsp;·&nbsp; Pharmacogenomics &nbsp;·&nbsp; Prior Authorization</div>
+      <div class="app-subtitle" style="color:rgba(255,255,255,0.85); font-weight:500;">AI-Assisted SMART on FHIR Backend Service &nbsp;·&nbsp; CDS Hooks &nbsp;·&nbsp; Pharmacogenomics &nbsp;·&nbsp; Prior Authorization</div>
+      <div style="margin-top:0.35rem;font-size:0.85rem;font-weight:700;color:#9bf316;letter-spacing:0.01em;">Clinical and financial intelligence at the point of prescribing.</div>
     </div>
     <div class="header-right">
       <button class="run-all-header-btn" id="run-all-btn" onclick="runAllScenarios()">
@@ -1091,7 +1092,7 @@
   // STATE
   // =============================================================================
   let selectedId = null;
-  const _traceStore = {};  // keyed by scenario id or "last" — stores agent_trace from each response
+  const _traceStore = {};  // keyed by scenario id or "last" — stores pipeline_trace from each response
 
   // =============================================================================
   // SCENARIO SELECTION
@@ -1138,7 +1139,7 @@
         ${withoutRows}
       </div>
       <div class="story-col">
-        <div class="story-col-header">⚡ With CFIP — Agentic Intelligence</div>
+        <div class="story-col-header">⚡ With CFIP — Clinical Decision Intelligence</div>
         ${withRows}
       </div>
       <div class="story-footer">
@@ -1306,8 +1307,8 @@
       const body = await response.json();
       rawEl.textContent = JSON.stringify(body, null, 2);
 
-      // Store agent trace for "View Full Analysis" modal
-      if (body.agent_trace) _traceStore["last"] = body.agent_trace;
+      // Store pipeline trace for "View Full Analysis" modal
+      if (body.pipeline_trace) _traceStore["last"] = body.pipeline_trace;
 
       if (!response.ok) {
         container.innerHTML = `<div class="error-state"><strong>HTTP ${response.status}</strong><br>${JSON.stringify(body, null, 2)}</div>`;
@@ -1383,7 +1384,7 @@
         });
         const body = await response.json();
         allRaw[id]  = body;
-        if (body.agent_trace) _traceStore[id] = body.agent_trace;
+        if (body.pipeline_trace) _traceStore[id] = body.pipeline_trace;
         const cards = body.cards || [];
         totalCards += cards.length;
         document.getElementById(`run-col-${id}`).innerHTML = cards.length === 0
@@ -1797,12 +1798,136 @@
       </div>
     </div>`;
 
+    // ── Tab 4: Prescription to Payment — full clinical-financial workflow ────
+    const tab4Html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:0.25rem 0;">
+      <div style="text-align:center;margin-bottom:1.1rem;">
+        <div style="font-size:0.9rem;font-weight:700;color:#1e293b;">Prescription to Payment</div>
+        <div style="font-size:0.75rem;color:#64748b;margin-top:0.2rem;">Full clinical-financial journey — from order entry to provider payment</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0;max-width:680px;margin:0 auto;">
+
+        <!-- Stage 1 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">1</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#1d4ed8;">Order Entry</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Clinician enters medication/procedure order in Epic. Order status is <code style="background:#dbeafe;color:#1d4ed8;padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;">draft</code> — not yet signed. Epic automatically fires the <code style="background:#dbeafe;color:#1d4ed8;padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem;">order-select</code> CDS Hook to CFIP at this exact moment.</div>
+          </div>
+        </div>
+
+        <!-- Stage 2 — CFIP -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#9bf316;color:#1a2e05;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">2</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#f0fdf0;border:2px solid #9bf316;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:800;color:#166534;">⭐ CFIP Check <span style="font-size:0.68rem;background:#9bf316;color:#1a2e05;padding:0.1rem 0.4rem;border-radius:4px;margin-left:0.3rem;">CFIP intervenes here</span></div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.3rem;">Real-time pipeline fires before the order is signed:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.35rem;">
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">PGx Safety</span>
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">PA Pre-check</span>
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">Denial Risk Score</span>
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">Cost Transparency</span>
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">AI Narrative</span>
+            </div>
+            <div style="font-size:0.7rem;color:#64748b;margin-top:0.35rem;font-style:italic;">If high denial risk → appeal letter pre-generated and ready for Stage 6.</div>
+          </div>
+        </div>
+
+        <!-- Stage 3 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#f59e0b;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">3</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#92400e;">Prior Authorization</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Practice submits PA to payer. Payer reviews clinical criteria. Outcomes: <strong>Approved</strong>, <strong>Denied</strong>, or <strong>More Info Needed</strong>. Can take hours to weeks.</div>
+          </div>
+        </div>
+
+        <!-- Stage 4 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">4</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#1d4ed8;">Fulfillment</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">PA approved → pharmacy dispenses or hospital administers the drug/procedure. Prescription is now <strong>active</strong>.</div>
+          </div>
+        </div>
+
+        <!-- Stage 5 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#8b5cf6;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">5</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#f5f3ff;border:1.5px solid #c4b5fd;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#5b21b6;">Claim Submission</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Provider submits a claim (invoice) to payer via clearinghouse. Contains ICD-10, NDC/CPT codes, NPI, and PA reference number.</div>
+          </div>
+        </div>
+
+        <!-- Stage 6 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#f59e0b;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">6</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#92400e;">Adjudication</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Payer processes claim against coverage rules.</div>
+            <div style="display:flex;gap:0.4rem;margin-top:0.35rem;flex-wrap:wrap;">
+              <span style="background:#dcfce7;color:#166534;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">✓ Paid</span>
+              <span style="background:#fee2e2;color:#991b1b;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">✗ Denied → use CFIP appeal letter</span>
+              <span style="background:#fef3c7;color:#92400e;font-size:0.67rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;">⏳ Pended</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage 7 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#10b981;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">7</div>
+            <div style="width:2px;background:#e2e8f0;flex:1;margin:2px 0;"></div>
+          </div>
+          <div style="background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.5rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#065f46;">Remittance & Payment</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Payer sends ERA (Electronic Remittance Advice — 835 transaction) detailing what is paid and why. Payment deposited to provider via EFT.</div>
+          </div>
+        </div>
+
+        <!-- Stage 8 -->
+        <div style="display:flex;align-items:stretch;gap:0.75rem;">
+          <div style="display:flex;flex-direction:column;align-items:center;width:2.2rem;flex-shrink:0;">
+            <div style="width:2rem;height:2rem;border-radius:50%;background:#64748b;color:white;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;">8</div>
+          </div>
+          <div style="background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:8px;padding:0.6rem 0.85rem;flex:1;">
+            <div style="font-size:0.8rem;font-weight:700;color:#334155;">Patient Billing</div>
+            <div style="font-size:0.73rem;color:#475569;margin-top:0.2rem;">Remaining balance (copay, coinsurance, deductible) billed to patient via statement or patient portal.</div>
+          </div>
+        </div>
+
+      </div>
+      <div style="max-width:680px;margin:0.9rem auto 0;background:#f0fdf0;border:1.5px solid #9bf316;border-radius:7px;padding:0.55rem 0.9rem;font-size:0.73rem;color:#166534;font-weight:600;">
+        ⭐ CFIP intervenes at Stage 2 — the earliest and least costly point. A denial caught here costs nothing. A denial at Stage 6 costs weeks of rework and risks no payment.
+      </div>
+    </div>`;
+
     // Tab switching — must be on window so modal innerHTML can call it
     window.cfipTab = function(n) {
       document.getElementById("cfip-t1").style.display = n === 1 ? "block" : "none";
       document.getElementById("cfip-t2").style.display = n === 2 ? "block" : "none";
       document.getElementById("cfip-t3").style.display = n === 3 ? "block" : "none";
-      [1,2,3].forEach(i => {
+      document.getElementById("cfip-t4").style.display = n === 4 ? "block" : "none";
+      [1,2,3,4].forEach(i => {
         const btn = document.getElementById("cfip-tb" + i);
         btn.style.background = n === i ? "#6366f1" : "#e2e8f0";
         btn.style.color      = n === i ? "white"   : "#64748b";
@@ -1827,10 +1952,16 @@
                  font-size:0.8rem;font-weight:600;background:#e2e8f0;color:#64748b;">
           ③ Epic Production Flow
         </button>
+        <button id="cfip-tb4" onclick="cfipTab(4)"
+          style="padding:0.4rem 1.1rem;border:none;border-radius:6px;cursor:pointer;
+                 font-size:0.8rem;font-weight:600;background:#e2e8f0;color:#64748b;">
+          ④ Prescription to Payment
+        </button>
       </div>
       <div id="cfip-t1">${tab1Html}</div>
       <div id="cfip-t2" style="display:none;">${tab2Html}</div>
       <div id="cfip-t3" style="display:none;">${tab3Html}</div>
+      <div id="cfip-t4" style="display:none;">${tab4Html}</div>
     </div>`;
 
     openModal("CFIP End-to-End Flow", html, false, true);
@@ -1904,7 +2035,7 @@
   async function handleLink(event, url, label) {
     event.preventDefault();
 
-    // Agent Reasoning Trace — covers /analysis, /pgx, /oncology placeholder URLs
+    // Pipeline Execution Trace — covers /analysis, /pgx, /oncology placeholder URLs
     if (url.includes("placeholder.cfip.app")) {
       const trace  = _traceStore["last"] || _traceStore[Object.keys(_traceStore)[0]] || [];
       const colors = {
@@ -1923,8 +2054,12 @@
             }</span>`
           ).join(" &nbsp;·&nbsp; ")}
         </div>`;
+      const hasAiStep = trace.some(l => l.startsWith("AI "));
+      const aiNote = hasAiStep
+        ? `<p style="margin-top:0.75rem;font-size:0.78rem;color:#94a3b8;">* Appeal letter generation uses OpenAI GPT-4o-mini. All other steps are rule-based.</p>`
+        : "";
       const traceHtml = trace.length === 0
-        ? `<p style="color:#888;font-size:0.85rem;">Run a scenario first to see the AI agent reasoning trace.</p>`
+        ? `<p style="color:#888;font-size:0.85rem;">Run a scenario first to see the pipeline execution trace.</p>`
         : legend + `<div style="font-family:'Courier New',monospace;font-size:0.78rem;line-height:1.8;background:#0f172a;color:#e2e8f0;padding:1.1rem 1.25rem;border-radius:8px;overflow-x:auto;">${
             trace.map(line => {
               // Extract first word only (before any space or colon) — handles
@@ -1936,8 +2071,8 @@
               const rest = line.slice(phase.length).replace(/^[\s:]+/, "");
               return `<div>${badge} <span style="color:#cbd5e1;">${rest}</span></div>`;
             }).join("")
-          }</div>`;
-      openModal("AI Agent Reasoning Trace", traceHtml, false);
+          }</div>` + aiNote;
+      openModal("Pipeline Execution Trace", traceHtml, false);
       return;
     }
 

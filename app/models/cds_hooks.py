@@ -169,9 +169,9 @@ class CdsResponse(CdsBase):
     systemActions: list[Action] = Field(default_factory=list)
 
     # CDS Hooks spec allows extension fields — Epic ignores unknown keys.
-    # The harness uses this to display the agent reasoning trace in
+    # The harness uses this to display the pipeline execution trace in
     # "View Full Analysis" without a separate endpoint.
-    agent_trace: list[str] = Field(default_factory=list)
+    pipeline_trace: list[str] = Field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

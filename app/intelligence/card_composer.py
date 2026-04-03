@@ -343,7 +343,7 @@ def compose_oncology_card(
         suggestions=suggestions,
         selectionBehavior="at-most-one" if suggestions else None,
         links=[Link(
-            label="View Agent Reasoning Trace",
+            label="View Pipeline Execution Trace",
             url="https://placeholder.cfip.app/oncology",
             type="absolute",
         )],
@@ -359,14 +359,14 @@ def _build_summary(result: DenialRiskResult, pa_bundle: PABundle | None) -> str:
     Build the card headline (≤140 chars).
 
     With PA bundle:
-      "Ozempic: 87% Approval | PA Ready to Submit | Est. $150/mo"
+      "Ozempic: 87% Approval | PA Ready to Submit | Est. ~$150/mo (indicative only)"
       "Ozempic: 65% Approval — Moderate Risk | PA Incomplete"
-    Without PA bundle (Phase 3 style):
-      "Ozempic: 87% Approval Probability | Est. $150/mo"
+    Without PA bundle:
+      "Ozempic: 87% Approval Probability | Est. ~$150/mo (indicative only)"
     """
     drug = result.drug_name or result.drug_class.upper()
     prob = result.approval_probability
-    cost = f"Est. ${result.cost_estimate_monthly:.0f}/mo" if result.cost_estimate_monthly else ""
+    cost = f"Est. ~${result.cost_estimate_monthly:.0f}/mo (indicative only)" if result.cost_estimate_monthly else ""
 
     if result.risk_level == "low":
         pa_status = " | PA Ready to Submit" if pa_bundle and pa_bundle.ready_to_submit else ""
@@ -416,7 +416,7 @@ def _build_detail(result: DenialRiskResult, pa_bundle: PABundle | None) -> str:
 
     # Cost estimate
     if result.cost_estimate_monthly:
-        lines.append(f"**Estimated cost:** ${result.cost_estimate_monthly:.0f}/mo copay")
+        lines.append(f"**Estimated cost:** ~${result.cost_estimate_monthly:.0f}/mo copay _(indicative only — not based on patient formulary)_")
         lines.append("")
 
     # PA Bundle Status section (Phase 4)
@@ -465,7 +465,7 @@ def _build_links(result: DenialRiskResult) -> list[Link]:
     """
     return [
         Link(
-            label="View Agent Reasoning Trace",
+            label="View Pipeline Execution Trace",
             url="https://placeholder.cfip.app/analysis",  # replaced in Phase 6
             type="absolute",
         )
@@ -609,7 +609,7 @@ def _compose_pgx_alert_card(pgx_result: PgxResult, drug: str) -> Card:
         suggestions=suggestions,
         selectionBehavior="at-most-one" if suggestions else None,
         links=[Link(
-            label="View Agent Reasoning Trace",
+            label="View Pipeline Execution Trace",
             url="https://placeholder.cfip.app/pgx",
             type="absolute",
         )],
@@ -646,7 +646,7 @@ def _compose_pgx_recommend_testing_card(pgx_result: PgxResult, drug: str) -> Car
         suggestions=[Suggestion(label=f"Order {gene} PGx Panel")],
         selectionBehavior="at-most-one",
         links=[Link(
-            label="View Agent Reasoning Trace",
+            label="View Pipeline Execution Trace",
             url="https://placeholder.cfip.app/pgx",
             type="absolute",
         )],

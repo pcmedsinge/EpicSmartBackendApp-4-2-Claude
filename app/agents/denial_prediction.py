@@ -40,8 +40,8 @@ _METFORMIN_RXNORM_CODES = ["6809"]
 _LOINC_A1C = "4548-4"
 _LOINC_BMI = "39156-5"
 
-# Cost estimate per scenario — hardcoded in Phase 3.
-# Phase 5 will replace this with a real formulary/cost lookup.
+# Cost estimate per scenario — hardcoded placeholder values.
+# A real formulary/coverage lookup (via FHIR Coverage resource) is needed to replace these.
 _COST_ESTIMATES: dict[str, float] = {
     "glp1": 150.00,
 }

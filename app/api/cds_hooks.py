@@ -202,7 +202,7 @@ async def _handle_order_intelligence(request: HookRequest) -> CdsResponse:
             trace.append(f"ERR appeal_letter: {exc}")
             logger.warning("Appeal generation failed — continuing without appeal: %s", exc)
 
-    return CdsResponse(cards=result.cards, agent_trace=trace)
+    return CdsResponse(cards=result.cards, pipeline_trace=trace)
 
 
 # ---------------------------------------------------------------------------

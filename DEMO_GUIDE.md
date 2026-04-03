@@ -32,7 +32,7 @@ Everything else in `.env.template` is already correct.
 
 ```bash
 .venv\Scripts\activate
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 5000
 ```
 
 On first startup the server seeds the SQLite database (payer rules, CPIC drug-gene rules, synthetic patient overlay). You should see:
@@ -44,7 +44,7 @@ INFO  CPIC rules seeded
 INFO  Application startup complete
 ```
 
-Verify it's running: http://localhost:8000/docs
+Verify it's running: http://localhost:5000/docs
 
 ---
 

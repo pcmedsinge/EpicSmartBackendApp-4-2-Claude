@@ -65,7 +65,7 @@ class DenialRiskResult(BaseModel):
     payer: str = Field(default="", description="Payer name (e.g. 'UnitedHealthcare').")
     cost_estimate_monthly: float = Field(
         default=0.0,
-        description="Estimated monthly patient cost (copay/coinsurance). Hardcoded per scenario in Phase 3.",
+        description="Indicative monthly patient cost (copay/coinsurance). Hardcoded placeholder — not derived from patient formulary or Coverage resource.",
     )
 
     # Audit / transparency
